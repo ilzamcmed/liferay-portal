@@ -140,7 +140,7 @@ const ProductComparison = ({
 					<div className="font-weight-normal subtitle text-neutral-8 text-paragraph-xs">
 						Get covered for{' '}
 						<span className="text-brand-primary">
-							&#36;{promo} today
+							&#36;{Number(promo) % 1 === 0  ? promo : Number(promo).toFixed(2)} today
 						</span>
 					</div>
 				</div>
