@@ -20,8 +20,6 @@
 long countryId = ParamUtil.getLong(request, "countryId");
 
 Country country = CountryLocalServiceUtil.fetchCountry(countryId);
-
-String backURL = ParamUtil.getString(request, "backURL", String.valueOf(renderResponse.createRenderURL()));
 %>
 
 <portlet:actionURL name="/address/edit_country" var="editCountryURL" />
@@ -31,7 +29,6 @@ String backURL = ParamUtil.getString(request, "backURL", String.valueOf(renderRe
 >
 	<aui:input name="<%= Constants.CMD %>" type="hidden" value="<%= (country == null) ? Constants.ADD : Constants.UPDATE %>" />
 	<aui:input name="redirect" type="hidden" value="<%= currentURL %>" />
-	<aui:input name="backURL" type="hidden" value="<%= backURL %>" />
 	<aui:input name="countryId" type="hidden" value="<%= String.valueOf(countryId) %>" />
 
 	<liferay-ui:error exception="<%= CountryA2Exception.class %>" message="please-enter-a-valid-two-letter-iso-code" />
@@ -84,7 +81,7 @@ String backURL = ParamUtil.getString(request, "backURL", String.valueOf(renderRe
 	<liferay-frontend:edit-form-footer>
 		<aui:button type="submit" />
 
-		<aui:button href="<%= backURL %>" type="cancel" />
+		<aui:button href='<%= ParamUtil.getString(request, "backURL", String.valueOf(renderResponse.createRenderURL())) %>' type="cancel" />
 	</liferay-frontend:edit-form-footer>
 </liferay-frontend:edit-form>
 

@@ -33,7 +33,6 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuil
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItemListBuilder;
 import com.liferay.info.item.InfoItemReference;
-import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -47,6 +46,7 @@ import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.portlet.PortletProvider;
 import com.liferay.portal.kernel.portlet.PortletProviderUtil;
 import com.liferay.portal.kernel.portlet.PortletURLUtil;
+import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -634,26 +634,8 @@ public class ContentDashboardAdminManagementToolbarDisplayContext
 		).filter(
 			Objects::nonNull
 		).map(
-			contentDashboardItemFilter -> DropdownItemBuilder.putData(
-				"action", "selectFileExtension"
-			).putData(
-				"dialogTitle", contentDashboardItemFilter.getLabel(_locale)
-			).putData(
-				"redirectURL",
-				PortletURLBuilder.create(
-					getPortletURL()
-				).setParameter(
-					contentDashboardItemFilter.getParameterName(), (String)null
-				).buildString()
-			).putData(
-				"selectFileExtensionURL", contentDashboardItemFilter.getURL()
-			).setActive(
-				ListUtil.isNotEmpty(
-					contentDashboardItemFilter.getParameterValues())
-			).setLabel(
-				_language.get(httpServletRequest, "extension") +
-					StringPool.TRIPLE_PERIOD
-			).build()
+			contentDashboardItemFilter ->
+				contentDashboardItemFilter.getDropdownItem()
 		).collect(
 			Collectors.toList()
 		);

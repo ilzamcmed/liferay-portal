@@ -1,11 +1,10 @@
 {
-	"dependencies": {
-	},
+	"dependencies": {},
 	"name": "@liferay/frontend-taglib",
 	"scripts": {
 		"build": "liferay-npm-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "7.1.2"
+	"version": "8.0.1"
 }

@@ -78,7 +78,7 @@ public class AddressDisplay {
 		return LanguageUtil.get(
 			new AggregateResourceBundle(
 				resourceBundle, PortalUtil.getResourceBundle(locale)),
-			_type);
+			_listTypeName);
 	}
 
 	public String getZip() {
@@ -95,10 +95,10 @@ public class AddressDisplay {
 
 		_listTypeId = listType.getListTypeId();
 
+		_listTypeName = StringPool.BLANK;
 		_name = StringPool.BLANK;
 		_region = null;
 		_street = StringPool.BLANK;
-		_type = StringPool.BLANK;
 		_zip = StringPool.BLANK;
 	}
 
@@ -106,15 +106,15 @@ public class AddressDisplay {
 		_addressId = address.getAddressId();
 		_city = address.getCity();
 		_listTypeId = address.getListTypeId();
+		_listTypeName = _getListTypeName(address);
 		_name = address.getName();
 		_region = address.getRegion();
 		_street = address.getStreet1();
-		_type = _getType(address);
 		_zip = address.getZip();
 	}
 
-	private String _getType(Address address) {
-		ListType listType = address.getType();
+	private String _getListTypeName(Address address) {
+		ListType listType = address.getListType();
 
 		return listType.getName();
 	}
@@ -124,10 +124,10 @@ public class AddressDisplay {
 	private final long _addressId;
 	private final String _city;
 	private final long _listTypeId;
+	private final String _listTypeName;
 	private final String _name;
 	private final Region _region;
 	private final String _street;
-	private final String _type;
 	private final String _zip;
 
 }

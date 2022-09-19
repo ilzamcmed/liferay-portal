@@ -800,7 +800,7 @@ definition {
 
 			AssetPublisherPortlet.configureAssetDisplayOrderPG(
 				fieldNameOrder = "Numeric",
-				sortOrder = "Ascending");
+				sortOrder = "Descending");
 		}
 
 		task ("View the displayed assets in en-US") {
@@ -1015,7 +1015,7 @@ definition {
 
 			AssetPublisherPortlet.configureAssetDisplayOrderPG(
 				fieldNameOrder = "Modified Date",
-				sortOrder = "Ascending");
+				sortOrder = "Descending");
 		}
 
 		task ("Filter assets by category") {

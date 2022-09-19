@@ -28,7 +28,6 @@ import com.liferay.bookmarks.service.base.BookmarksEntryLocalServiceBaseImpl;
 import com.liferay.bookmarks.social.BookmarksActivityKeys;
 import com.liferay.bookmarks.util.comparator.EntryModifiedDateComparator;
 import com.liferay.expando.kernel.service.ExpandoRowLocalService;
-import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.aop.AopService;
@@ -47,6 +46,7 @@ import com.liferay.portal.kernel.model.SystemEventConstants;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.notifications.UserNotificationDefinition;
+import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Hits;
 import com.liferay.portal.kernel.search.Indexable;
@@ -139,6 +139,9 @@ public class BookmarksEntryLocalServiceImpl
 		entry.setName(name);
 		entry.setUrl(url);
 		entry.setDescription(description);
+		entry.setStatusByUserId(userId);
+		entry.setStatusByUserName(user.getFullName());
+		entry.setStatusDate(serviceContext.getModifiedDate(new Date()));
 		entry.setExpandoBridgeAttributes(serviceContext);
 
 		entry = bookmarksEntryPersistence.update(entry);
@@ -630,11 +633,16 @@ public class BookmarksEntryLocalServiceImpl
 
 		_validate(url);
 
+		User user = _userLocalService.getUser(userId);
+
 		entry.setFolderId(folderId);
 		entry.setTreePath(entry.buildTreePath());
 		entry.setName(name);
 		entry.setUrl(url);
 		entry.setDescription(description);
+		entry.setStatusByUserId(userId);
+		entry.setStatusByUserName(user.getFullName());
+		entry.setStatusDate(serviceContext.getModifiedDate(new Date()));
 		entry.setExpandoBridgeAttributes(serviceContext);
 
 		entry = bookmarksEntryPersistence.update(entry);

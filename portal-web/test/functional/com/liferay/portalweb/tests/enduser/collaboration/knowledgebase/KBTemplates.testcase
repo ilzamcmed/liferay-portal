@@ -28,9 +28,9 @@ definition {
 		}
 	}
 
+	@e2etest
 	@priority = "4"
 	@refactordone
-	@uitest
 	test CanAddArticleWithTemplate {
 		property portal.acceptance = "true";
 		property test.name.skip.portal.instance = "KBTemplates#CanAddArticleWithTemplate";
@@ -54,9 +54,9 @@ definition {
 			kbArticleTitle = "Knowledge Base Article Title");
 	}
 
+	@e2etest
 	@priority = "4"
 	@refactordone
-	@uitest
 	test CanAddTemplate {
 		property portal.acceptance = "true";
 		property test.name.skip.portal.instance = "KBTemplates#CanAddTemplate";
@@ -72,6 +72,64 @@ definition {
 		KBTemplate.viewCPViaAddTemplate(
 			kbTemplateContent = "Knowledge Base Template Content",
 			kbTemplateTitle = "Knowledge Base Template Title");
+	}
+
+	@description = "This test ensures that the template can be added by center new button."	
+	@e2etest
+	@priority = "5"
+	test CanAddTemplateThroughCenterNewButton {
+		property custom.properties = "feature.flag.LPS-156421=true";
+
+		KBAdmin.openKBAdmin(siteURLKey = "guest");
+
+		KBArticle.openPageTreePanel(section = "Templates");
+
+		KBTemplate.addCP(
+			addByCenterButton = "true",
+			kbTemplateContent = "Knowledge Base Template Content",
+			kbTemplateTitle = "Knowledge Base Template Title");
+
+		KBAdmin.openKBAdmin(siteURLKey = "guest");
+
+		KBArticle.openPageTreePanel(section = "Templates");
+
+		KBTemplate.viewTemplatesThroughPageTreePanel(kbTemplatesList = "Knowledge Base Template Title");
+	}
+
+	@description = "This test ensures that the empty message can be displayed in the pane."	
+	@priority = "3"
+	test CanViewEmptyMessage {
+		property custom.properties = "feature.flag.LPS-156421=true";
+
+		KBAdmin.openKBAdmin(siteURLKey = "guest");
+
+		KBArticle.openPageTreePanel(section = "Templates");
+
+		KBTemplate.viewNoTemplates();
+	}
+
+	@description = "This test ensures that the article templates list can be displayed in the pane."	
+	@priority = "3"
+	test CanViewTemplatesInPane {
+		property custom.properties = "feature.flag.LPS-156421=true";
+
+		JSONKnowledgeBase.addkBTemplate(
+			kbTemplateContent = "Knowledge Base Template Content1",
+			kbTemplateTitle = "Knowledge Base Template Title1");
+
+		JSONKnowledgeBase.addkBTemplate(
+			kbTemplateContent = "Knowledge Base Template Content2",
+			kbTemplateTitle = "Knowledge Base Template Title2");
+
+		KBAdmin.openKBAdmin(siteURLKey = "guest");
+
+		KBArticle.openPageTreePanel(section = "Templates");
+
+		LexiconEntry.viewEntryName(rowEntry = "Knowledge Base Template Title1");
+
+		LexiconEntry.viewEntryName(rowEntry = "Knowledge Base Template Title2");
+
+		KBTemplate.viewTemplatesThroughPageTreePanel(kbTemplatesList = "Knowledge Base Template Title1,Knowledge Base Template Title2");
 	}
 
 	@description = "This test covers LPS-120917. It checks that XSS cannot be executed from the KB template name."

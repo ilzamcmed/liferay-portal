@@ -1302,6 +1302,12 @@ public class ObjectEntryLocalServiceImpl
 			_objectFieldPersistence.findByODI_DBT_I(
 				objectDefinitionId, "String", true);
 
+		if (objectFields.isEmpty()) {
+			return predicate;
+		}
+
+		Predicate searchPredicate = null;
+
 		for (ObjectField objectField : objectFields) {
 			Table<?> table = _objectFieldLocalService.getTable(
 				objectDefinitionId, objectField.getName());
@@ -1311,15 +1317,26 @@ public class ObjectEntryLocalServiceImpl
 
 			Predicate likePredicate = column.like("%" + search + "%");
 
-			if (predicate == null) {
-				predicate = likePredicate;
+			if (searchPredicate == null) {
+				searchPredicate = likePredicate;
 			}
 			else {
-				predicate = predicate.and(likePredicate);
+				searchPredicate = searchPredicate.or(likePredicate);
 			}
 		}
 
-		return predicate;
+		long searchLong = GetterUtil.getLong(search);
+
+		if (searchLong != 0L) {
+			searchPredicate = searchPredicate.or(
+				ObjectEntryTable.INSTANCE.objectEntryId.eq(searchLong));
+		}
+
+		if (predicate == null) {
+			return searchPredicate;
+		}
+
+		return predicate.and(searchPredicate.withParentheses());
 	}
 
 	private DLFolder _getDLFolder(

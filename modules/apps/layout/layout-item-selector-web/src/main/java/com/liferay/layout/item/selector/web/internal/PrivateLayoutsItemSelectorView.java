@@ -79,19 +79,11 @@ public class PrivateLayoutsItemSelectorView
 
 		Group group = themeDisplay.getScopeGroup();
 
-		if (group.getPrivateLayoutsPageCount() <= 0) {
+		if (!group.isLayoutSetPrototype() && !group.isPrivateLayoutsEnabled()) {
 			return false;
 		}
 
 		return true;
-	}
-
-	@Reference(
-		target = "(osgi.web.symbolicname=com.liferay.layout.item.selector.web)",
-		unbind = "-"
-	)
-	public void setServletContext(ServletContext servletContext) {
-		_servletContext = servletContext;
 	}
 
 	@Reference
@@ -100,6 +92,9 @@ public class PrivateLayoutsItemSelectorView
 	@Reference
 	private Portal _portal;
 
+	@Reference(
+		target = "(osgi.web.symbolicname=com.liferay.layout.item.selector.web)"
+	)
 	private ServletContext _servletContext;
 
 }
