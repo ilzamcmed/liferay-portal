@@ -12,5 +12,13 @@
  * details.
  */
 
-declare const Step: () => JSX.Element;
-export default Step;
+import React from 'react';
+interface IAssignModal {
+	observer: any;
+}
+export declare enum ETabs {
+	Channel = 0,
+	Sites = 1,
+}
+declare const AssignModal: React.FC<IAssignModal>;
+export default AssignModal;

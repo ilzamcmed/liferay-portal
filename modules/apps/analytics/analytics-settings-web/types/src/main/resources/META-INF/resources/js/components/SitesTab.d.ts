@@ -12,5 +12,5 @@
  * details.
  */
 
-declare const Step: () => JSX.Element;
-export default Step;
+declare const SitesTab: () => JSX.Element;
+export default SitesTab;
