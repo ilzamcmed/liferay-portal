@@ -24,7 +24,12 @@ const Step = () => {
 
 	return (
 		<BasePage title={Liferay.Language.get('property')}>
-			{open && <AssignModal observer={observer} />}
+			{open && (
+				<AssignModal
+					observer={observer}
+					onCloseModal={() => onOpenChange(false)}
+				/>
+			)}
 
 			<ClayButton onClick={() => onOpenChange(true)}>
 				Open modal
