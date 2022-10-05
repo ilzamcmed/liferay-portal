@@ -12,25 +12,10 @@
  * details.
  */
 
-import ClayButton from '@clayui/button';
-import {useModal} from '@clayui/modal';
 import React from 'react';
 
-import AssignModal from '../../components/AssignModal';
-import BasePage from '../../components/BasePage';
-
-const Step = () => {
-	const {observer, onOpenChange, open} = useModal();
-
-	return (
-		<BasePage title={Liferay.Language.get('property')}>
-			{open && <AssignModal observer={observer} />}
-
-			<ClayButton onClick={() => onOpenChange(true)}>
-				Open modal
-			</ClayButton>
-		</BasePage>
-	);
+const SitesTab = () => {
+	return <div>SitesTab</div>;
 };
 
-export default Step;
+export default SitesTab;
