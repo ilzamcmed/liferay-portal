@@ -20,7 +20,7 @@ import ClayIcon from '@clayui/icon';
 import ClayManagementToolbar from '@clayui/management-toolbar';
 import {ClayPaginationBarWithBasicItems} from '@clayui/pagination-bar';
 import ClayTable from '@clayui/table';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 
 interface IChannelTab {
 	description?: string;
@@ -35,10 +35,34 @@ const filterItems = [
 ];
 
 const mockedData = [
-	{id: "1", name: 'beryl 1', property: 'property 1', relatedSite: 'site 1'},
-	{id: "2", name: 'beryl 2', property: 'property 2', relatedSite: 'site 2'},
-	{id: "3", name: 'beryl 3', property: 'property 3', relatedSite: 'site 3'},
-	{id: "4", name: 'beryl 4', property: 'property 4', relatedSite: 'site 4'},
+	{
+		id: '1',
+		checked: false,
+		name: 'beryl 1',
+		property: 'property 1',
+		relatedSite: 'site 1',
+	},
+	{
+		id: '2',
+		checked: false,
+		name: 'beryl 2',
+		property: 'property 2',
+		relatedSite: 'site 2',
+	},
+	{
+		id: '3',
+		checked: false,
+		name: 'beryl 3',
+		property: 'property 3',
+		relatedSite: 'site 3',
+	},
+	{
+		id: '4',
+		checked: false,
+		name: 'beryl 4',
+		property: 'property 4',
+		relatedSite: 'site 4',
+	},
 ];
 
 const ChannelTab: React.FC<IChannelTab> = () => {
@@ -63,6 +87,26 @@ const ChannelTab: React.FC<IChannelTab> = () => {
 	];
 
 	const [checked, setChecked] = useState(false);
+	const [dinamico, setDinamico] = useState([]);
+
+	useEffect(() => {
+		setDinamico(mockedData);
+	}, []);
+
+	function handleCheckboxChange(id) {
+		setDinamico(
+			dinamico.map((dinamico) =>
+				dinamico.id === id
+					? {...dinamico, checked: !dinamico.checked}
+					: dinamico
+			)
+		);
+	}
+
+	// const handleCheckboxChange = (itemId: any) => {
+	// 	const filter = mockedData.filter((id) => id === itemId);
+	// 	console.log(filter);
+	// };
 
 	return (
 		<>
@@ -162,7 +206,9 @@ const ChannelTab: React.FC<IChannelTab> = () => {
 			<ClayTable>
 				<ClayTable.Head>
 					<ClayTable.Row>
-						<ClayTable.Cell expanded headingCell>
+						<ClayTable.Cell className="w-auto"></ClayTable.Cell>
+
+						<ClayTable.Cell headingCell>
 							Channel Name
 						</ClayTable.Cell>
 
@@ -170,7 +216,7 @@ const ChannelTab: React.FC<IChannelTab> = () => {
 							Related Site
 						</ClayTable.Cell>
 
-						<ClayTable.Cell headingCell>
+						<ClayTable.Cell expanded headingCell>
 							Assigned Property
 						</ClayTable.Cell>
 					</ClayTable.Row>
@@ -180,10 +226,12 @@ const ChannelTab: React.FC<IChannelTab> = () => {
 					{mockedData.map((item) => (
 						<ClayTable.Row key={item.id}>
 							<ClayTable.Cell>
-								<ClayCheckbox 
-									checked={checked}
+								<ClayCheckbox
+									checked={item.checked}
 									id={item.id}
-									onChange={() => setChecked((val) => !val)}
+									onChange={() =>
+										handleCheckboxChange(item.id)
+									}
 								/>
 							</ClayTable.Cell>
 

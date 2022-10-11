@@ -12,7 +12,5 @@
  * details.
  */
 
-/// <reference types="react" />
-
 declare const SitesTab: () => JSX.Element;
 export default SitesTab;
