@@ -12,5 +12,9 @@
  * details.
  */
 
-declare const ChannelTab: () => JSX.Element;
+import React from 'react';
+interface IChannelTab {
+	description?: string;
+}
+declare const ChannelTab: React.FC<IChannelTab>;
 export default ChannelTab;
