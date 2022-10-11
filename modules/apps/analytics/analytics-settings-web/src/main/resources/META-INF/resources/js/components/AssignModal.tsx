@@ -17,6 +17,8 @@ import ClayModal from '@clayui/modal';
 import ClayTabs from '@clayui/tabs';
 import React, {useState} from 'react';
 
+// import BasePage from './BasePage';
+
 import ChannelTab from './ChannelTab';
 import SitesTab from './SitesTab';
 
@@ -39,7 +41,6 @@ const AssignModal: React.FC<IAssignModal> = ({observer, onCloseModal}) => {
 		<ClayModal observer={observer} size="lg">
 			<ClayModal.Header>
 				{/* TODO: Replace "Property Name" for property name from backend  */}
-
 				{Liferay.Language.get('assign-to')} Propertie Name
 			</ClayModal.Header>
 
@@ -64,17 +65,17 @@ const AssignModal: React.FC<IAssignModal> = ({observer, onCloseModal}) => {
 					>
 						{Liferay.Language.get('sites')}
 					</ClayTabs.Item>
-
-					<ClayTabs.Content activeIndex={activeTabKeyValue} fade>
-						<ClayTabs.TabPane aria-labelledby="tab-1">
-							<ChannelTab />
-						</ClayTabs.TabPane>
-
-						<ClayTabs.TabPane aria-labelledby="tab-2">
-							<SitesTab />
-						</ClayTabs.TabPane>
-					</ClayTabs.Content>
 				</ClayTabs>
+
+				<ClayTabs.Content activeIndex={activeTabKeyValue} fade>
+					<ClayTabs.TabPane aria-labelledby="tab-1">
+						<ChannelTab description="Channels can only be assigned to a single property at a time. Sites belonging to a channel will be automatically selected when a channel has been selected. " />
+					</ClayTabs.TabPane>
+
+					<ClayTabs.TabPane aria-labelledby="tab-2">
+						<SitesTab />
+					</ClayTabs.TabPane>
+				</ClayTabs.Content>
 			</ClayModal.Body>
 
 			<ClayModal.Footer
