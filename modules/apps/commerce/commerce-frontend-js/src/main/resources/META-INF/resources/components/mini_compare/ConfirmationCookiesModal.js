@@ -79,7 +79,8 @@ const ConfirmationCookiesModal = ({
 				Liferay.Language.get('commerce-cookies-rejected-description')
 			);
 			onDeclineFunctionalCookie();
-		} else {
+		}
+		else {
 			alertCookies(
 				'success',
 				Liferay.Language.get('commerce-cookies-accepted'),

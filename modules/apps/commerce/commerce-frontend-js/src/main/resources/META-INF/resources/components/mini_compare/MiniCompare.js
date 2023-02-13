@@ -43,7 +43,8 @@ function toggleStatus(commerceChannelGroupId, id, toggle) {
 		if (!cpDefinitionIds.includes(id)) {
 			cpDefinitionIds.push(id);
 		}
-	} else {
+	}
+	else {
 		const index = cpDefinitionIds.indexOf(id);
 
 		if (index !== -1) {
