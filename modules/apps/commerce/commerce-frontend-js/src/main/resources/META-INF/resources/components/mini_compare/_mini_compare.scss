@@ -109,3 +109,20 @@
 		}
 	}
 }
+
+.cookies-modal {
+	.modal-dialog {
+		max-width: 630px;
+
+		.alert {
+			opacity: 0.7;
+		}
+		.btn {
+			line-height: 1.75rem;
+		}
+
+		.btn-confirm {
+			color: $secondary-text;
+		}
+	}
+}

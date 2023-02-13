@@ -12,9 +12,10 @@
  * details.
  */
 
+import ClayButton from '@clayui/button';
 import ClayIcon from '@clayui/icon';
+import {useModal} from '@clayui/modal';
 import ClaySticker from '@clayui/sticker';
-import {checkCookieConsentForTypes} from '@liferay/cookies-banner-web';
 import classnames from 'classnames';
 import {COOKIE_TYPES, checkConsent} from 'frontend-js-web';
 import PropTypes from 'prop-types';
@@ -26,6 +27,7 @@ import {
 	PRODUCT_COMPARISON_TOGGLED,
 	TOGGLE_ITEM_IN_PRODUCT_COMPARISON,
 } from '../../utilities/eventsDefinitions';
+import ConfirmationCookiesModal from './ConfirmationCookiesModal';
 
 const compareCookie = new CommerceCookie(
 	'COMMERCE_COMPARE_cpDefinitionIds_',
@@ -41,8 +43,7 @@ function toggleStatus(commerceChannelGroupId, id, toggle) {
 		if (!cpDefinitionIds.includes(id)) {
 			cpDefinitionIds.push(id);
 		}
-	}
-	else {
+	} else {
 		const index = cpDefinitionIds.indexOf(id);
 
 		if (index !== -1) {
@@ -51,17 +52,6 @@ function toggleStatus(commerceChannelGroupId, id, toggle) {
 	}
 
 	compareCookie.setValue(commerceChannelGroupId, cpDefinitionIds.join(':'));
-}
-
-function alertCookies(alertType, alertTitle, alertMessage) {
-	Liferay.Util.openToast({
-		message: alertMessage,
-		title: alertTitle,
-		toastProps: {
-			autoClose: 5000,
-		},
-		type: alertType,
-	});
 }
 
 function Item(props) {
@@ -87,54 +77,46 @@ function Item(props) {
 
 function MiniCompare(props) {
 	const [items, setItems] = useState(props.items);
-	const [functionalCookiesConsent, setFunctionalCookiesConsent] = useState(
-		checkConsent(COOKIE_TYPES.FUNCTIONAL)
-	);
+	const functionalCookiesConsent = checkConsent(COOKIE_TYPES.FUNCTIONAL);
+
+	const {observer, onOpenChange, open} = useModal();
 
 	const triggerCheckCookieConsent = useCallback(() => {
 		return !functionalCookiesConsent && items?.length > 0;
 	}, [functionalCookiesConsent, items?.length]);
 
-	useEffect(() => {
-		if (triggerCheckCookieConsent()) {
-			checkCookieConsentForTypes(COOKIE_TYPES.FUNCTIONAL, {
-				alertMessage: Liferay.Language.get(
-					'product-comparison-cookies-alert'
-				),
-				customTitle: Liferay.Language.get(
-					'product-comparison-cookies-title'
-				),
-			})
-				.then(() => {
-					compareCookie.setValue(
+	const renderButton = functionalCookiesConsent ? (
+		<a className="btn btn-primary" href={props.compareProductsURL}>
+			{Liferay.Language.get('compare')}
+		</a>
+	) : (
+		<ClayButton
+			className="btn btn-primary"
+			onClick={() => onOpenChange(true)}
+		>
+			{Liferay.Language.get('compare')}
+		</ClayButton>
+	);
+
+	const removeMiniCompare = () => {
+		Array(props.itemsLimit)
+			.fill(null)
+			.map((_el, index) => {
+				const currentItem = items[index] || {};
+				const onDelete = () => {
+					setItems(items.filter((v) => v.id !== currentItem.id));
+					toggleStatus(
 						props.commerceChannelGroupId,
-						items.map((item) => item.id).join(':')
+						currentItem.id,
+						false
 					);
-					setFunctionalCookiesConsent(true);
-					alertCookies(
-						'success',
-						Liferay.Language.get('cookies-allowed'),
-						Liferay.Language.get(
-							'product-comparison-cookies-success'
-						)
-					);
-				})
-				.catch(() => {
-					alertCookies(
-						'warning',
-						Liferay.Language.get('cookies-not-allowed'),
-						Liferay.Language.get(
-							'product-comparison-cookies-warning'
-						)
-					);
-				});
-		}
-	}, [
-		functionalCookiesConsent,
-		items,
-		props.commerceChannelGroupId,
-		triggerCheckCookieConsent,
-	]);
+					Liferay.fire(ITEM_REMOVED_FROM_COMPARE, currentItem);
+				};
+				onDelete();
+			});
+
+		setItems([]);
+	};
 
 	useEffect(() => {
 		function toggleItem({id, thumbnail}) {
@@ -163,6 +145,7 @@ function MiniCompare(props) {
 		props.commerceChannelGroupId,
 		props.itemsLimit,
 		props.portletNamespace,
+		items,
 	]);
 
 	useEffect(() => {
@@ -201,9 +184,15 @@ function MiniCompare(props) {
 					);
 				})}
 
-			<a className="btn btn-primary" href={props.compareProductsURL}>
-				{Liferay.Language.get('compare')}
-			</a>
+			{renderButton}
+
+			{open && (
+				<ConfirmationCookiesModal
+					observer={observer}
+					onClose={() => onOpenChange(false)}
+					onDeclineFunctionalCookie={removeMiniCompare}
+				/>
+			)}
 		</div>
 	);
 }
