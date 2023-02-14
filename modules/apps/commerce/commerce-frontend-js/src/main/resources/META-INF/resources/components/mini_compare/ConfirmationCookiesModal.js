@@ -21,6 +21,45 @@ import {COOKIE_TYPES, checkConsent, setCookie, sub} from 'frontend-js-web';
 import PropTypes from 'prop-types';
 import React, {useState} from 'react';
 
+const alertCookies = (alertType, alertTitle, alertMessage) => {
+	Liferay.Util.openToast({
+		message: alertMessage,
+		title: alertTitle,
+		toastProps: {
+			autoClose: 5000,
+		},
+		type: alertType,
+	});
+};
+
+const CookieComponent = ({
+	alwaysActive = false,
+	description,
+	onToggle,
+	title,
+	toggled,
+}) => {
+	return (
+		<div>
+			<div className="d-flex justify-content-between">
+				<Text as="p" monospaced weight="bold">
+					{title}
+				</Text>
+
+				{alwaysActive ? (
+					<Text as="p" color="primary">
+						{Liferay.Language.get('always-active')}
+					</Text>
+				) : (
+					<ClayToggle onToggle={onToggle} toggled={toggled} />
+				)}
+			</div>
+
+			<Text as="p">{description}</Text>
+		</div>
+	);
+};
+
 const ConfirmationCookiesModal = ({
 	observer,
 	onClose,
@@ -34,17 +73,6 @@ const ConfirmationCookiesModal = ({
 		checkConsent(COOKIE_TYPES.PERSONALIZATION)
 	);
 	const [displayAlert, setDisplayAlert] = useState(true);
-
-	const alertCookies = (alertType, alertTitle, alertMessage) => {
-		Liferay.Util.openToast({
-			message: alertMessage,
-			title: alertTitle,
-			toastProps: {
-				autoClose: 5000,
-			},
-			type: alertType,
-		});
-	};
 
 	const handleSetCookies = ({functional, performance, personalization}) => {
 		setCookie(
@@ -72,12 +100,14 @@ const ConfirmationCookiesModal = ({
 			performanceCookies,
 			personalizationCookies,
 		});
+
 		if (!functionalCookies) {
 			alertCookies(
 				'warning',
 				Liferay.Language.get('commerce-cookies-rejected'),
 				Liferay.Language.get('commerce-cookies-rejected-description')
 			);
+
 			onDeclineFunctionalCookie();
 		}
 		else {
@@ -87,6 +117,7 @@ const ConfirmationCookiesModal = ({
 				Liferay.Language.get('commerce-cookies-accepted-description')
 			);
 		}
+
 		onClose();
 	};
 
@@ -96,6 +127,7 @@ const ConfirmationCookiesModal = ({
 			performanceCookies: false,
 			personalizationCookies: false,
 		});
+
 		setFunctionalCookies(false);
 		setPerformanceCookies(false);
 		setPersonalizationCookies(false);
@@ -104,6 +136,7 @@ const ConfirmationCookiesModal = ({
 			Liferay.Language.get('commerce-cookies-rejected'),
 			Liferay.Language.get('commerce-cookies-rejected-description')
 		);
+
 		onClose();
 		onDeclineFunctionalCookie();
 	};
@@ -114,6 +147,7 @@ const ConfirmationCookiesModal = ({
 			performanceCookies: true,
 			personalizationCookies: true,
 		});
+
 		setFunctionalCookies(true);
 		setPerformanceCookies(true);
 		setPersonalizationCookies(true);
@@ -122,35 +156,8 @@ const ConfirmationCookiesModal = ({
 			Liferay.Language.get('commerce-cookies-accepted'),
 			Liferay.Language.get('commerce-cookies-accepted-description')
 		);
+
 		onClose();
-	};
-
-	const CookieComponent = ({
-		description,
-		necessaryCookie = false,
-		onToggle,
-		title,
-		toggled,
-	}) => {
-		return (
-			<div>
-				<div className="d-flex justify-content-between">
-					<Text as="p" monospaced weight="bold">
-						{title}
-					</Text>
-
-					{necessaryCookie ? (
-						<Text as="p" color="primary">
-							{Liferay.Language.get('always-active')}
-						</Text>
-					) : (
-						<ClayToggle onToggle={onToggle} toggled={toggled} />
-					)}
-				</div>
-
-				<Text as="p">{description}</Text>
-			</div>
-		);
 	};
 
 	return (
@@ -183,10 +190,10 @@ const ConfirmationCookiesModal = ({
 					)}
 
 					<CookieComponent
+						alwaysActive
 						description={Liferay.Language.get(
 							'cookies-description[CONSENT_TYPE_NECESSARY]'
 						)}
-						necessaryCookie
 						title={Liferay.Language.get(
 							'cookies-title[CONSENT_TYPE_NECESSARY]'
 						)}

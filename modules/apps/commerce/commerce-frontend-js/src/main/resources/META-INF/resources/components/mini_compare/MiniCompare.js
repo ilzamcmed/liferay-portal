@@ -86,19 +86,6 @@ function MiniCompare(props) {
 		return !functionalCookiesConsent && items?.length > 0;
 	}, [functionalCookiesConsent, items?.length]);
 
-	const renderButton = functionalCookiesConsent ? (
-		<a className="btn btn-primary" href={props.compareProductsURL}>
-			{Liferay.Language.get('compare')}
-		</a>
-	) : (
-		<ClayButton
-			className="btn btn-primary"
-			onClick={() => onOpenChange(true)}
-		>
-			{Liferay.Language.get('compare')}
-		</ClayButton>
-	);
-
 	const removeMiniCompare = () => {
 		Array(props.itemsLimit)
 			.fill(null)
@@ -185,7 +172,18 @@ function MiniCompare(props) {
 					);
 				})}
 
-			{renderButton}
+			{!functionalCookiesConsent ? (
+				<a className="btn btn-primary" href={props.compareProductsURL}>
+					{Liferay.Language.get('compare')}
+				</a>
+			) : (
+				<ClayButton
+					className="btn btn-primary"
+					onClick={() => onOpenChange(true)}
+				>
+					{Liferay.Language.get('compare')}
+				</ClayButton>
+			)}
 
 			{open && (
 				<ConfirmationCookiesModal
