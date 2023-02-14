@@ -172,7 +172,7 @@ function MiniCompare(props) {
 					);
 				})}
 
-			{!functionalCookiesConsent ? (
+			{functionalCookiesConsent ? (
 				<a className="btn btn-primary" href={props.compareProductsURL}>
 					{Liferay.Language.get('compare')}
 				</a>
