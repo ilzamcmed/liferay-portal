@@ -36,7 +36,6 @@ import {
 	individualsListColumns
 } from 'shared/util/table-columns';
 import {CHART_COLOR_NAMES} from 'shared/components/Chart';
-import {compose} from 'redux';
 import {createDateKeysIMap} from 'shared/util/intervals';
 import {DATE_CHANGED, NAME} from 'shared/util/pagination';
 import {formatUTCDateFromUnix} from 'shared/util/date';
@@ -49,7 +48,6 @@ import {OrderedMap} from 'immutable';
 import {OrderParams} from 'shared/util/records';
 import {sub} from 'shared/util/lang';
 import {useStatefulPagination} from 'shared/hooks';
-import {withSelectedPoint} from 'shared/hoc';
 
 const {
 	greyjoy: CHART_BLACK,
@@ -113,7 +111,6 @@ interface ISegmentGrowthChartProps {
 	hasSelectedPoint: boolean;
 	height?: number;
 	individualCounts?: {anonymousCount: number; knownCount: number};
-	onPointSelect: Function;
 	selectedPoint: number;
 }
 
@@ -123,7 +120,6 @@ interface ITooltipProps {
 }
 
 export const SegmentGrowthChart: React.FC<ISegmentGrowthChartProps> = ({
-	alwaysShowSelectedTooltip = false,
 	data,
 	hasSelectedPoint,
 	height = 360,
@@ -131,12 +127,10 @@ export const SegmentGrowthChart: React.FC<ISegmentGrowthChartProps> = ({
 		anonymousCount: 0,
 		knownCount: 0
 	},
-	onPointSelect,
 	selectedPoint
 }) => {
 	const [legendHoverItem, setLegendHoverItem] = useState(null);
 	const [mouseOutside, setMouseOutside] = useState(false);
-	const [selectedTooltipX, setSelectedTooltipX] = useState(null);
 
 	const {anonymousCount, knownCount} = individualCounts;
 
@@ -335,29 +329,6 @@ export const SegmentGrowthChart: React.FC<ISegmentGrowthChartProps> = ({
 			<ResponsiveContainer height={height}>
 				<AreaChart
 					data={data}
-					onClick={pointData => {
-						if (alwaysShowSelectedTooltip && pointData) {
-							if (tooltipRef) {
-								const {
-									getTranslate,
-									props: {viewBox},
-									state: {boxWidth}
-								} = tooltipRef.current;
-
-								setSelectedTooltipX(
-									getTranslate({
-										key: 'x',
-										tooltipDimension: boxWidth,
-										viewBoxDimension: viewBox.width
-									})
-								);
-							}
-
-							onPointSelect({
-								index: pointData.activeTooltipIndex
-							});
-						}
-					}}
 					onMouseLeave={() => setMouseOutside(true)}
 					onMouseMove={() => setMouseOutside(false)}
 				>
@@ -473,13 +444,6 @@ export const SegmentGrowthChart: React.FC<ISegmentGrowthChartProps> = ({
 					<Tooltip
 						content={renderTooltip}
 						cursor={!intervals.length}
-						position={
-							showFixedTooltip
-								? {
-										x: selectedTooltipX
-								  }
-								: null
-						}
 						ref={tooltipRef}
 						wrapperStyle={
 							showFixedTooltip
@@ -575,88 +539,11 @@ export const SegmentGrowthChart: React.FC<ISegmentGrowthChartProps> = ({
 	);
 };
 
-interface ISelectedPointInfoProps {
-	data: CHANGES_AGGREGATION_SHAPE[];
-	hasSelectedPoint: boolean;
-	onClearSelection: Function;
-	selectedPoint: number;
-}
-
-export const SelectedPointInfo: React.FC<ISelectedPointInfoProps> = ({
-	data,
-	hasSelectedPoint,
-	onClearSelection,
-	selectedPoint
-}) => {
-	const {added, modifiedDate, removed} = get(data, selectedPoint, {
-		added: 0,
-		modifiedDate: 0,
-		removed: 0
-	});
-
-	const changeValues =
-		hasSelectedPoint &&
-		selectedPoint > 0 &&
-		getNetChange(
-			get(data[selectedPoint - 1], selectedPoint),
-			get(data[selectedPoint], selectedPoint)
-		);
-
-	return (
-		<div className='selected-point-info'>
-			{hasSelectedPoint ? (
-				<>
-					<div className='d-flex align-items-baseline'>
-						<h4>
-							{sub(
-								Liferay.Language.get(
-									'segment-membership-activities-x'
-								),
-								[formatUTCDateFromUnix(modifiedDate)]
-							)}
-						</h4>
-
-						<ClayButton
-							className='button-root'
-							displayType='unstyled'
-							onClick={onClearSelection}
-							size='sm'
-						>
-							{Liferay.Language.get('clear-date-selection')}
-						</ClayButton>
-					</div>
-
-					<div className='changed-values'>
-						{sub(
-							Liferay.Language.get('added-x'),
-							[<b key='ADDED'>{added}</b>],
-							false
-						)}
-
-						{sub(
-							Liferay.Language.get('removed-x'),
-							[<b key='REMOVED'>{removed}</b>],
-							false
-						)}
-
-						{changeValues &&
-							sub(
-								Liferay.Language.get('net-change-x'),
-								[
-									<b key='CHANGE'>
-										{`${changeValues[0]}(${changeValues[1]}%)`}
-									</b>
-								],
-								false
-							)}
-					</div>
-				</>
-			) : (
-				<h4>{Liferay.Language.get('known-members')}</h4>
-			)}
-		</div>
-	);
-};
+export const SelectedPointInfo: React.FC = () => (
+	<div className='selected-point-info'>
+		<h4>{Liferay.Language.get('known-members')}</h4>
+	</div>
+);
 
 interface ISegmentGrowthWithList {
 	channelId: string;
@@ -666,7 +553,6 @@ interface ISegmentGrowthWithList {
 	hasSelectedPoint: boolean;
 	id: string;
 	individualCounts?: {anonymousCount: number; knownCount: number};
-	onPointSelect: Function;
 	selectedPoint: number;
 	timeZoneId: string;
 }
@@ -679,7 +565,6 @@ const SegmentGrowthWithList: React.FC<ISegmentGrowthWithList> = ({
 	hasSelectedPoint,
 	id,
 	individualCounts,
-	onPointSelect,
 	selectedPoint,
 	timeZoneId
 }) => {
@@ -708,10 +593,6 @@ const SegmentGrowthWithList: React.FC<ISegmentGrowthWithList> = ({
 			individualsListColumns.email,
 			individualsListColumns.getDateCreated(timeZoneId)
 		];
-	};
-
-	const handleClearSelection = () => {
-		onPointSelect({index: null});
 	};
 
 	const {modifiedDate} = get(data, selectedPoint, {modifiedDate: 0});
@@ -755,19 +636,13 @@ const SegmentGrowthWithList: React.FC<ISegmentGrowthWithList> = ({
 					hasSelectedPoint={hasSelectedPoint}
 					height={360}
 					individualCounts={individualCounts}
-					onPointSelect={onPointSelect}
 					selectedPoint={selectedPoint}
 				/>
 			</div>
 
 			{showMembershipList && (
 				<>
-					<SelectedPointInfo
-						data={data}
-						hasSelectedPoint={hasSelectedPoint}
-						onClearSelection={handleClearSelection}
-						selectedPoint={selectedPoint}
-					/>
+					<SelectedPointInfo />
 
 					<SearchableEntityTable
 						{...paginationParams}
@@ -824,4 +699,4 @@ const SegmentGrowthWithList: React.FC<ISegmentGrowthWithList> = ({
 	);
 };
 
-export default compose(withSelectedPoint)(SegmentGrowthWithList);
+export default SegmentGrowthWithList;
