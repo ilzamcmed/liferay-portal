@@ -47,7 +47,7 @@ const useRequest = ({
 						setState({...state, error: true, loading: false})
 				);
 		}),
-		[]
+		[dataSourceFn]
 	);
 
 	const getData = () => {
