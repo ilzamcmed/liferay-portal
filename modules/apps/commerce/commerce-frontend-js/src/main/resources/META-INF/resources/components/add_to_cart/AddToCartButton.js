@@ -17,7 +17,7 @@ import ClayIcon from '@clayui/icon';
 import {useIsMounted, useLiferayState} from '@liferay/frontend-js-react-web';
 import classnames from 'classnames';
 import PropTypes from 'prop-types';
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 
 import cartAtom from '../../utilities/atoms/cartAtom';
 import {ADD_ITEM_TO_CART, OPEN_MODAL} from '../../utilities/eventsDefinitions';
@@ -50,58 +50,75 @@ function AddToCartButton({
 	const isMounted = useIsMounted();
 	const [event, setEvent] = useState(null);
 
-	const addToCartNotAllowed =
-		cpInstances[0].quantity > cpInstances[0].stockQuantity;
+	const handleClickAddToCart = useCallback(
+		(event, orderTypeId) => {
+			if (cartAtomState.updating) {
+				return;
+			}
 
-	const handleClickAddToCart = (event, orderTypeId) => {
-		if (cartAtomState.updating) {
-			return;
-		}
+			if (onClick) {
+				return onClick(event, cpInstances, cartId, channel, accountId);
+			}
 
-		if (onClick) {
-			return onClick(event, cpInstances, cartId, channel, accountId);
-		}
+			setIsTriggeringCartUpdate(true);
 
-		setIsTriggeringCartUpdate(true);
+			setCartAtomState({updating: true});
 
-		setCartAtomState({updating: true});
+			return addToCart(
+				cpInstances,
+				cartId,
+				channel,
+				accountId,
+				orderTypeId
+			)
+				.then(onAdd)
+				.catch((error) => {
+					console.error(error);
 
-		return addToCart(cpInstances, cartId, channel, accountId, orderTypeId)
-			.then(onAdd)
-			.catch((error) => {
-				console.error(error);
+					let errorMessage;
 
-				let errorMessage;
+					if (error.message) {
+						errorMessage = error.message;
+					}
+					else if (error.detail) {
+						errorMessage = error.detail;
+					}
+					else {
+						errorMessage =
+							cpInstances.length > 1
+								? Liferay.Language.get(
+										'unable-to-add-products-to-the-cart'
+								  )
+								: Liferay.Language.get(
+										'unable-to-add-product-to-the-cart'
+								  );
+					}
 
-				if (error.message) {
-					errorMessage = error.message;
-				}
-				else if (error.detail) {
-					errorMessage = error.detail;
-				}
-				else {
-					errorMessage =
-						cpInstances.length > 1
-							? Liferay.Language.get(
-									'unable-to-add-products-to-the-cart'
-							  )
-							: Liferay.Language.get(
-									'unable-to-add-product-to-the-cart'
-							  );
-				}
+					showErrorNotification(errorMessage);
 
-				showErrorNotification(errorMessage);
+					onError(error);
+				})
+				.finally(() => {
+					if (isMounted()) {
+						setCartAtomState({updating: false});
 
-				onError(error);
-			})
-			.finally(() => {
-				if (isMounted()) {
-					setCartAtomState({updating: false});
-
-					setIsTriggeringCartUpdate(false);
-				}
-			});
-	};
+						setIsTriggeringCartUpdate(false);
+					}
+				});
+		},
+		[
+			accountId,
+			cartAtomState.updating,
+			cartId,
+			channel,
+			cpInstances,
+			isMounted,
+			onAdd,
+			onClick,
+			onError,
+			setCartAtomState,
+		]
+	);
 
 	useEffect(() => {
 		function handleAddItemToCart({orderTypeId}) {
@@ -112,8 +129,10 @@ function AddToCartButton({
 
 		Liferay.on(ADD_ITEM_TO_CART, handleAddItemToCart);
 
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [event]);
+		return () => {
+			Liferay.detach(ADD_ITEM_TO_CART, handleAddItemToCart);
+		};
+	}, [event, handleClickAddToCart]);
 
 	return (
 		<ClayButton
@@ -138,14 +157,9 @@ function AddToCartButton({
 						channel.id
 					);
 
-					if (
-						!addToCartNotAllowed &&
-						showOrderTypeModal &&
-						!order.items.length
-					) {
+					if (showOrderTypeModal && !order.items.length) {
 						setEvent(event);
 						Liferay.fire(OPEN_MODAL, {
-							addToCart: true,
 							id: `${settings.namespace}add-order-modal`,
 							size: MEDIUM_MODAL_SIZE,
 						});
