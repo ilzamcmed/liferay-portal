@@ -88,5 +88,25 @@ describe('AccessTokenList', () => {
 		expect(
 			getByText(container.querySelector('.card-body'), 'Generate Token')
 		).toBeTruthy();
+		expect(container.querySelector('.table-root')).toMatchSnapshot();
+	});
+
+	it('should render indefinite on expiration date column when generated token is indefinite', () => {
+		API.apiTokens.search.mockReturnValueOnce(
+			Promise.resolve([
+				data.mockApiToken({
+					createDate: '2023-05-11T19:35:28.338Z',
+					expirationDate: '2123-05-12T19:35:28.000Z'
+				})
+			])
+		);
+
+		const {container} = render(<DefaultComponent />);
+
+		jest.runAllTimers();
+
+		expect(
+			getByText(container.querySelector('td:nth-child(3)'), 'Indefinite')
+		).toMatchSnapshot();
 	});
 });

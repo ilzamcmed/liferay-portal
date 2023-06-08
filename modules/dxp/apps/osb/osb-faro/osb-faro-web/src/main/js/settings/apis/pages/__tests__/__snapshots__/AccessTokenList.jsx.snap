@@ -1,5 +1,78 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`AccessTokenList should display the "Generate Token" card  above the table if the token is expired 1`] = `
+<div
+  class="table-responsive table-root flex-grow-1 mb-0"
+>
+  <table
+    class="table table-autofit table-hover table-heading-nowrap table-nowrap"
+  >
+    <thead>
+      <tr>
+        <th
+          class="table-head-title"
+        >
+          Token
+        </th>
+        <th
+          class="table-head-title"
+        >
+          Date Created
+        </th>
+        <th
+          class="table-head-title"
+        >
+          Expiration
+        </th>
+        <th />
+      </tr>
+    </thead>
+    <tbody
+      class="mb-0"
+    >
+      <tr
+        class=""
+      >
+        <td
+          class=""
+        >
+          <span
+            class="text-secondary mr-1"
+          >
+            Token ending in
+          </span>
+          <strong
+            class="font-weight-bold"
+          >
+            4ABC
+          </strong>
+          <div
+            class="label label-root ml-2 label-danger label-lg label-uppercase"
+          >
+            <span
+              class="label-item"
+            >
+              Expired
+            </span>
+          </div>
+        </td>
+        <td>
+          Jul 10, 2018
+        </td>
+        <td>
+          Jul 09, 2018
+        </td>
+        <td
+          class="row-inline-actions"
+        >
+          <span />
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+`;
+
 exports[`AccessTokenList should render 1`] = `
 <div>
   <div
@@ -90,11 +163,6 @@ exports[`AccessTokenList should render 1`] = `
                   <th
                     class="table-head-title"
                   >
-                    Last Seen
-                  </th>
-                  <th
-                    class="table-head-title"
-                  >
                     Date Created
                   </th>
                   <th
@@ -129,10 +197,7 @@ exports[`AccessTokenList should render 1`] = `
                     Jul 10, 2018
                   </td>
                   <td>
-                    Jul 10, 2018
-                  </td>
-                  <td>
-                    Aug 9, 2018
+                    Aug 09, 2018
                   </td>
                   <td
                     class="row-inline-actions"
@@ -191,11 +256,6 @@ exports[`AccessTokenList should show the generated token in a list and the "Gene
         <th
           class="table-head-title"
         >
-          Last Seen
-        </th>
-        <th
-          class="table-head-title"
-        >
           Date Created
         </th>
         <th
@@ -230,10 +290,7 @@ exports[`AccessTokenList should show the generated token in a list and the "Gene
           Jul 10, 2018
         </td>
         <td>
-          Jul 10, 2018
-        </td>
-        <td>
-          Aug 9, 2018
+          Aug 09, 2018
         </td>
         <td
           class="row-inline-actions"
