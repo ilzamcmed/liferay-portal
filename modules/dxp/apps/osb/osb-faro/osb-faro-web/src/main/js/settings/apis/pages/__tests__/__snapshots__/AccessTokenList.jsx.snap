@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`AccessTokenList should display the "Generate Token" card  above the table if the token is expired 1`] = `
+exports[`AccessTokenList should display the "Generate Token" card if the token is expired 1`] = `
 <div
   class="table-responsive table-root flex-grow-1 mb-0"
 >
@@ -212,16 +212,16 @@ exports[`AccessTokenList should render 1`] = `
                         type="button"
                       >
                         <svg
-                          class="icon-root lexicon-icon lexicon-icon-paste"
-                          viewBox=""
+                          class="lexicon-icon lexicon-icon-copy icon-root"
+                          role="presentation"
                         >
                           <use
-                            xlink:href="/o/osb-faro-web/dist/sprite.svg#paste"
+                            xlink:href="#copy"
                           />
                         </svg>
                       </button>
                       <button
-                        class="button-root btn btn-secondary"
+                        class="btn btn-secondary"
                         type="button"
                       >
                         Revoke
@@ -237,6 +237,12 @@ exports[`AccessTokenList should render 1`] = `
     </div>
   </div>
 </div>
+`;
+
+exports[`AccessTokenList should render indefinite on expiration date column when generated token is indefinite 1`] = `
+<td>
+  Indefinite
+</td>
 `;
 
 exports[`AccessTokenList should show the generated token in a list and the "Generate Token" button should no longer be visible 1`] = `
@@ -314,7 +320,7 @@ exports[`AccessTokenList should show the generated token in a list and the "Gene
               </svg>
             </button>
             <button
-              class="button-root btn btn-secondary"
+              class="btn btn-secondary"
               type="button"
             >
               Revoke
