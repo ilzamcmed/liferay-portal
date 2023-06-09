@@ -1,8 +1,9 @@
 import * as API from 'shared/api';
 import Alerts, {AlertTypes} from 'shared/components/Alert';
 import BasePage from 'settings/components/BasePage';
-import Button from 'shared/components/Button';
 import Card from 'shared/components/Card';
+import ClayButton from '@clayui/button';
+import ClayLoadingIndicator from '@clayui/loading-indicator';
 import CopyButton from 'shared/components/CopyButton';
 import GenerateTokenCard from '../components/GenerateTokenCard';
 import moment from 'moment';
@@ -192,10 +193,13 @@ const TokenList: React.FC<
 
 							return (
 								<>
-									<CopyButton text={token} />
+									<CopyButton
+										displayType='secondary'
+										text={token}
+									/>
 
-									<Button
-										loading={loading}
+									<ClayButton
+										displayType='secondary'
 										onClick={() => {
 											open(
 												modalTypes.CONFIRMATION_MODAL,
@@ -245,8 +249,10 @@ const TokenList: React.FC<
 											);
 										}}
 									>
-										{Liferay.Language.get('revoke')}
-									</Button>
+										{loading && <ClayLoadingIndicator />}
+										{!loading &&
+											Liferay.Language.get('revoke')}
+									</ClayButton>
 								</>
 							);
 						}}

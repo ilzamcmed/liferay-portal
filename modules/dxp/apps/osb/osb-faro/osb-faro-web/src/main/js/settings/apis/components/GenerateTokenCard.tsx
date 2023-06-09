@@ -1,6 +1,7 @@
 import * as API from 'shared/api';
-import Button from 'shared/components/Button';
 import Card from 'shared/components/Card';
+import ClayButton from '@clayui/button';
+import ClayLoadingIndicator from '@clayui/loading-indicator';
 import Form from '@clayui/form';
 import React, {useState} from 'react';
 import Select from 'shared/components/Select';
@@ -65,11 +66,10 @@ const GenerateTokenCard: React.FC<IGenerateTokenCardProps> = ({
 					</Form.Group>
 				</div>
 
-				<Button
+				<ClayButton
 					className='col-md-3'
 					data-testid='generate-token-button'
-					display='primary'
-					loading={loading}
+					displayType='primary'
 					onClick={() => {
 						setLoading(true);
 
@@ -98,8 +98,9 @@ const GenerateTokenCard: React.FC<IGenerateTokenCardProps> = ({
 							});
 					}}
 				>
-					{Liferay.Language.get('generate-token')}
-				</Button>
+					{loading && <ClayLoadingIndicator />}
+					{!loading && Liferay.Language.get('generate-token')}
+				</ClayButton>
 			</Card.Body>
 		</Card>
 	);
