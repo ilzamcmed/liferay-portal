@@ -7,6 +7,7 @@
 
 declare type Props = {
 	className: string;
+	description: string;
 	disabled: boolean;
 	label: string;
 	onChange: (value: boolean) => void;
@@ -14,6 +15,7 @@ declare type Props = {
 };
 declare const AccessibilitySetting: ({
 	className,
+	description,
 	disabled,
 	label,
 	onChange,
