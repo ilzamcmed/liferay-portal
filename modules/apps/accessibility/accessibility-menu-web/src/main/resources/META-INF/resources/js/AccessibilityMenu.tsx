@@ -5,6 +5,7 @@
 
 import ClayAlert from '@clayui/alert';
 import ClayButton from '@clayui/button';
+import {Text} from '@clayui/core';
 import ClayModal, {useModal} from '@clayui/modal';
 import {
 	CONSTANTS,
@@ -29,6 +30,7 @@ type KEYS = keyof typeof CONSTANTS;
 type Setting = {
 	className: string;
 	defaultValue: boolean;
+	description: string;
 	key: KEYS;
 	label: string;
 	sessionClicksValue: boolean;
@@ -36,6 +38,7 @@ type Setting = {
 
 type AccessibilityMenuSetting = {
 	className: string;
+	description: string;
 	key: KEYS;
 	label: string;
 	updating?: boolean;
@@ -66,6 +69,7 @@ const AccessibilityMenu = (props: Props) => {
 					const {
 						className,
 						defaultValue,
+						description,
 						key,
 						label,
 						sessionClicksValue,
@@ -79,7 +83,7 @@ const AccessibilityMenu = (props: Props) => {
 
 					toggleClassName(className, value);
 
-					prev[key] = {className, key, label, value};
+					prev[key] = {className, description, key, label, value};
 
 					return prev;
 				},
@@ -184,6 +188,12 @@ const AccessibilityMenu = (props: Props) => {
 					</ClayModal.Header>
 
 					<ClayModal.Body>
+						<Text as="p" weight="normal">
+							{Liferay.Language.get(
+								'the-following-options-can-help-you-to-configure-your-experience'
+							)}
+						</Text>
+
 						{isSettingsDisabled && (
 							<ClayAlert
 								className="mb-4"
@@ -218,6 +228,7 @@ const AccessibilityMenu = (props: Props) => {
 												? 'mb-3'
 												: ''
 										}
+										description={settings[key].description}
 										disabled={isSettingsDisabled}
 										key={settings[key].key}
 										label={settings[key].label}

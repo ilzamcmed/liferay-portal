@@ -10,6 +10,7 @@ const KEY_EVENT = 'Enter';
 
 type Props = {
 	className: string;
+	description: string;
 	disabled: boolean;
 	label: string;
 	onChange: (value: boolean) => void;
@@ -18,6 +19,7 @@ type Props = {
 
 const AccessibilitySetting = ({
 	className,
+	description,
 	disabled,
 	label,
 	onChange,
@@ -35,6 +37,10 @@ const AccessibilitySetting = ({
 			onToggle={onChange}
 			toggled={value}
 		/>
+
+		<span aria-label={description} className="toggle-switch-text">
+			{description}
+		</span>
 	</li>
 );
 
