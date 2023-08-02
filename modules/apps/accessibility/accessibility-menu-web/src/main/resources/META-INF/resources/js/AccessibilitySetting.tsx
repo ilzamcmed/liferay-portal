@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
+import {Text} from '@clayui/core';
 import {ClayToggle} from '@clayui/form';
 import React from 'react';
 
@@ -27,6 +28,7 @@ const AccessibilitySetting = ({
 }: Props) => (
 	<li className={className}>
 		<ClayToggle
+			aria-describedby="accessibility-help"
 			disabled={disabled}
 			label={label}
 			onKeyDown={(event) => {
@@ -38,8 +40,10 @@ const AccessibilitySetting = ({
 			toggled={value}
 		/>
 
-		<span aria-label={description} className="toggle-switch-text">
-			{description}
+		<span className="toggle-switch-text" id="accessibility-help">
+			<Text color="secondary" size={3}>
+				{description}
+			</Text>
 		</span>
 	</li>
 );
