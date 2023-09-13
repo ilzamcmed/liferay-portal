@@ -30,7 +30,6 @@ import ClayAlert, {DisplayType} from '@clayui/alert';
 import ClaySticker from '@clayui/sticker';
 
 import emptyPictureIcon from '../../assets/icons/avatar.svg';
-import {Footer} from '../../components/Footer/Footer';
 import Select from '../../components/Select/Select';
 import fetcher from '../../services/fetcher';
 import CreatedProjectCard from './CreatedProjectCard';
@@ -144,10 +143,9 @@ const PurchasedSolutions: React.FC = () => {
 		(async () => {
 			setCurrentUserAccount(await getUserAccount());
 
-			const insdustriesListTypeEntries =
-				await getListTypeDefinitionByExternalReferenceCode(
-					externalReferenceCode
-				);
+			const insdustriesListTypeEntries = await getListTypeDefinitionByExternalReferenceCode(
+				externalReferenceCode
+			);
 
 			setIndustries(insdustriesListTypeEntries?.listTypeEntries);
 
@@ -471,16 +469,20 @@ const PurchasedSolutions: React.FC = () => {
 																onClick={() => {
 																	setCurrentPhonesFlags(
 																		{
-																			code: item.code,
-																			flag: item.flag,
+																			code:
+																				item.code,
+																			flag:
+																				item.flag,
 																		}
 																	);
 
 																	setValue(
 																		'phone',
 																		{
-																			code: item.code,
-																			flag: item.flag,
+																			code:
+																				item.code,
+																			flag:
+																				item.flag,
 																		}
 																	);
 																}}
@@ -560,8 +562,7 @@ const PurchasedSolutions: React.FC = () => {
 													<ClayButton
 														displayType="unstyled"
 														onClick={() => {
-															window.location.href =
-																origin;
+															window.location.href = origin;
 														}}
 													>
 														Cancel
@@ -599,10 +600,6 @@ const PurchasedSolutions: React.FC = () => {
 					{step?.page === 'projectCreated' && (
 						<CreatedProjectCard product={product} />
 					)}
-				</div>
-
-				<div className="footer-to-bottom">
-					<Footer />
 				</div>
 			</div>
 			<ClayAlert.ToastContainer>

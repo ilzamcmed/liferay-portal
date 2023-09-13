@@ -48,11 +48,11 @@ import com.liferay.headless.commerce.delivery.catalog.dto.v1_0.converter.SkuDTOC
 import com.liferay.headless.commerce.delivery.catalog.internal.util.v1_0.SkuOptionUtil;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.configuration.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.Language;
-import com.liferay.portal.kernel.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.settings.SystemSettingsLocator;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
@@ -322,12 +322,10 @@ public class SkuDTOConverter implements DTOConverter<CPInstance, Sku> {
 		}
 
 		if (_cpDefinitionInventoryEngine.isDisplayStockQuantity(cpInstance)) {
-			BigDecimal stockQuantity =
+			availability.setStockQuantity(
 				_commerceInventoryEngine.getStockQuantity(
 					companyId, commerceCatalogGroupId, commerceChannelGroupId,
-					sku, unitOfMeasureKey);
-
-			availability.setStockQuantity(stockQuantity.intValue());
+					sku, unitOfMeasureKey));
 		}
 
 		return availability;

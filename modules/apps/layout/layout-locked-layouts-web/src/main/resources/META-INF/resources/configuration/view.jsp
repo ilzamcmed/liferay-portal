@@ -43,7 +43,7 @@ LockedLayoutsConfigurationDisplayContext lockedLayoutsConfigurationDisplayContex
 		<clay:content-col
 			expand="<%= true %>"
 		>
-			<p class="text-secondary"><liferay-ui:message key="configure-how-often-to-review-which-pages-are-locked-and-how-long-a-page-can-be-locked-without-an-autosave" /></p>
+			<p class="text-secondary"><liferay-ui:message key="set-how-long-a-page-can-remain-locked-without-being-autosaved" /></p>
 		</clay:content-col>
 	</clay:content-row>
 
@@ -57,20 +57,6 @@ LockedLayoutsConfigurationDisplayContext lockedLayoutsConfigurationDisplayContex
 		</clay:content-col>
 	</clay:content-row>
 
-	<clay:content-row>
-		<clay:content-col
-			expand="<%= true %>"
-		>
-			<aui:input aria-describedby='<%= liferayPortletResponse.getNamespace() + "lockReviewFrequencyHiddenDescription" %>' label="lock-review-frequency" name="lockReviewFrequency" required="<%= true %>" type="number" value="<%= lockedLayoutsConfigurationDisplayContext.getLockReviewFrequency() %>" wrapperCssClass="c-mb-1">
-				<aui:validator name="number" />
-				<aui:validator name="min">1</aui:validator>
-				<aui:validator name="max">99999</aui:validator>
-			</aui:input>
-
-			<p class="text-3 text-secondary" id="<portlet:namespace />lockReviewFrequencyHiddenDescription"><liferay-ui:message key="set-a-value-in-minutes-between-1-and-99.999" /></p>
-		</clay:content-col>
-	</clay:content-row>
-
 	<clay:content-row
 		cssClass="c-mt-2"
 	>
@@ -79,7 +65,7 @@ LockedLayoutsConfigurationDisplayContext lockedLayoutsConfigurationDisplayContex
 		>
 			<aui:input aria-describedby='<%= liferayPortletResponse.getNamespace() + "timeWithoutAutosaveHiddenDescription" %>' label="time-without-autosave" name="timeWithoutAutosave" required="<%= true %>" type="number" value="<%= lockedLayoutsConfigurationDisplayContext.getTimeWithoutAutosave() %>" wrapperCssClass="c-mb-1">
 				<aui:validator name="number" />
-				<aui:validator name="min">5</aui:validator>
+				<aui:validator name="min">1</aui:validator>
 				<aui:validator name="max">99999</aui:validator>
 			</aui:input>
 

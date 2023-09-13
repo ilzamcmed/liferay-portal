@@ -33,7 +33,6 @@ import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.test.rule.FeatureFlags;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.util.LocalizedMapUtil;
@@ -53,7 +52,6 @@ import org.junit.runner.RunWith;
 /**
  * @author Jürgen Kappler
  */
-@FeatureFlags("LPS-176083")
 @RunWith(Arquillian.class)
 public class ManyToManyObjectRelationshipInfoCollectionProviderTest {
 
@@ -166,7 +164,7 @@ public class ManyToManyObjectRelationshipInfoCollectionProviderTest {
 		throws Exception {
 
 		return _objectDefinitionLocalService.addCustomObjectDefinition(
-			TestPropsValues.getUserId(), 0, false, false,
+			TestPropsValues.getUserId(), 0, false, false, false,
 			LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
 			"A" + RandomTestUtil.randomString(), null, null,
 			LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
