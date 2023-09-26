@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-/// <reference types="react" />
+// / <reference types="react" />
 
 interface IProps {
 	ariaDescribedBy: string;
@@ -13,16 +13,18 @@ interface IProps {
 	inputName: string;
 	labelOff: string;
 	labelOn: string;
+	onItemsChange: (value: Array<any>) => void;
 	toggled: boolean;
 }
 declare const FeatureFlagToggle: ({
 	ariaDescribedBy,
 	companyId,
-	disabled: initialDisabled,
+	disabled,
 	featureFlagKey,
 	inputName,
 	labelOff,
 	labelOn,
+	onItemsChange,
 	toggled: initialToggled,
 }: IProps) => JSX.Element;
 export default FeatureFlagToggle;

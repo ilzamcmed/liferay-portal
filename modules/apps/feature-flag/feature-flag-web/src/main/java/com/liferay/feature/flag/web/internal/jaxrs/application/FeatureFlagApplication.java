@@ -5,9 +5,17 @@
 
 package com.liferay.feature.flag.web.internal.jaxrs.application;
 
+import com.liferay.feature.flag.web.internal.feature.flag.FeatureFlagsBag;
 import com.liferay.feature.flag.web.internal.feature.flag.FeatureFlagsBagProvider;
+import com.liferay.feature.flag.web.internal.model.FeatureFlagDisplay;
+import com.liferay.feature.flag.web.internal.model.FeatureFlagWrapper;
+import com.liferay.petra.function.transform.TransformUtil;
+import com.liferay.portal.kernel.feature.flag.FeatureFlag;
+import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -18,6 +26,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.osgi.service.component.annotations.Component;
@@ -48,12 +57,51 @@ public class FeatureFlagApplication extends Application {
 
 		_featureFlagsBagProvider.setEnabled(companyId, key, enabled);
 
+		FeatureFlagsBag companyFeatureFlags =
+			_featureFlagsBagProvider.getOrCreateFeatureFlagsBag(
+				companyId);
+
+		List<FeatureFlag> dependencyFeatureFlags = TransformUtil.transform(
+			_getFeatureFlagDependencies(companyFeatureFlags, key),
+			this::_toRawFeatureFlag);
+
 		return Response.ok(
+			HashMapBuilder.put(
+				"dependencyFeatureFlags",
+				TransformUtil.transform(
+					dependencyFeatureFlags,
+					featureFlag -> new FeatureFlagDisplay(
+						companyId,
+						TransformUtil.transform(
+							_getFeatureFlagDependencies(
+								companyFeatureFlags, featureFlag.getKey()),
+							this::_toRawFeatureFlag),
+						featureFlag, httpServletRequest.getLocale()))
+			).build(),
+			MediaType.APPLICATION_JSON
 		).build();
 	}
 
 	public Set<Object> getSingletons() {
 		return Collections.singleton(this);
+	}
+
+	private List<FeatureFlag> _getFeatureFlagDependencies(
+		FeatureFlagsBag companyFeatureFlags, String key) {
+
+		return companyFeatureFlags.getFeatureFlags(
+			featureFlag -> ArrayUtil.contains(
+				featureFlag.getDependencyKeys(), key));
+	}
+
+	private FeatureFlag _toRawFeatureFlag(FeatureFlag featureFlag) {
+		Class<?> featureFlagWrapperClass = FeatureFlagWrapper.class;
+
+		while (featureFlagWrapperClass.isInstance(featureFlag)) {
+			featureFlag = ((FeatureFlagWrapper)featureFlag).getFeatureFlag();
+		}
+
+		return featureFlag;
 	}
 
 	@Reference
