@@ -5,16 +5,14 @@
 
 package com.liferay.feature.flag.web.internal.jaxrs.application;
 
+import com.liferay.feature.flag.web.internal.feature.flag.FeatureFlagsBag;
 import com.liferay.feature.flag.web.internal.feature.flag.FeatureFlagsBagProvider;
-import com.liferay.feature.flag.web.internal.company.feature.flags.CompanyFeatureFlags;
-import com.liferay.feature.flag.web.internal.company.feature.flags.CompanyFeatureFlagsProvider;
-import com.liferay.feature.flag.web.internal.model.FeatureFlag;
 import com.liferay.feature.flag.web.internal.model.FeatureFlagDisplay;
 import com.liferay.feature.flag.web.internal.model.FeatureFlagWrapper;
 import com.liferay.petra.function.transform.TransformUtil;
+import com.liferay.portal.kernel.feature.flag.FeatureFlag;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.Portal;
 
 import java.util.Collections;
 import java.util.List;
@@ -57,12 +55,10 @@ public class FeatureFlagApplication extends Application {
 		@FormParam("companyId") long companyId,
 		@FormParam("enabled") boolean enabled, @FormParam("key") String key) {
 
-		long companyId = _portal.getCompanyId(httpServletRequest);
+		_featureFlagsBagProvider.setEnabled(companyId, key, enabled);
 
-		_companyFeatureFlagsProvider.setEnabled(companyId, key, enabled);
-
-		CompanyFeatureFlags companyFeatureFlags =
-			_companyFeatureFlagsProvider.getOrCreateCompanyFeatureFlags(
+		FeatureFlagsBag companyFeatureFlags =
+			_featureFlagsBagProvider.getOrCreateFeatureFlagsBag(
 				companyId);
 
 		List<FeatureFlag> dependencyFeatureFlags = TransformUtil.transform(
@@ -71,10 +67,11 @@ public class FeatureFlagApplication extends Application {
 
 		return Response.ok(
 			HashMapBuilder.put(
-				"dependentFeatureFlags",
+				"dependencyFeatureFlags",
 				TransformUtil.transform(
 					dependencyFeatureFlags,
 					featureFlag -> new FeatureFlagDisplay(
+						companyId,
 						TransformUtil.transform(
 							_getFeatureFlagDependencies(
 								companyFeatureFlags, featureFlag.getKey()),
@@ -90,7 +87,7 @@ public class FeatureFlagApplication extends Application {
 	}
 
 	private List<FeatureFlag> _getFeatureFlagDependencies(
-		CompanyFeatureFlags companyFeatureFlags, String key) {
+		FeatureFlagsBag companyFeatureFlags, String key) {
 
 		return companyFeatureFlags.getFeatureFlags(
 			featureFlag -> ArrayUtil.contains(
