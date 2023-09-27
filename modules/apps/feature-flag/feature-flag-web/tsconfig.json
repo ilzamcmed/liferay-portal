@@ -1,5 +1,5 @@
 {
-	"@generated": "d8040a45557ab265b8f60f4099e72408f21f87e4",
+	"@generated": "ef216918fe9210ef214b23817fd305223a6440f2",
 	"@overrides": {
 	},
 	"@readonly": "** AUTO-GENERATED: DO NOT EDIT OUTSIDE @overrides **",
@@ -13,6 +13,15 @@
 		"moduleResolution": "node",
 		"outDir": "./types",
 		"paths": {
+			"@liferay/frontend-data-set-web": [
+				"../../frontend-data-set/frontend-data-set-web/src/main/resources/META-INF/resources/index.d.ts"
+			],
+			"frontend-js-components-web": [
+				"../../frontend-js/frontend-js-components-web/src/main/resources/META-INF/resources/index.ts"
+			],
+			"frontend-js-web": [
+				"../../frontend-js/frontend-js-web/src/main/resources/META-INF/resources/index.d.ts"
+			]
 		},
 		"sourceMap": false,
 		"strict": true,
@@ -32,5 +41,14 @@
 		"../../../global.d.ts"
 	],
 	"references": [
+		{
+			"path": "../../frontend-data-set/frontend-data-set-web"
+		},
+		{
+			"path": "../../frontend-js/frontend-js-components-web"
+		},
+		{
+			"path": "../../frontend-js/frontend-js-web"
+		}
 	]
 }
