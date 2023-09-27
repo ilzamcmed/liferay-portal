@@ -8,30 +8,32 @@ import React, {useState} from 'react';
 
 interface IProps {
 	ariaDescribedBy: string;
-	companyId: number;
+	companyId: string;
 	disabled: boolean;
 	featureFlagKey: string;
 	inputName: string;
 	labelOff: string;
 	labelOn: string;
+	onItemsChange: (value: Array<any>) => void;
 	toggled: boolean;
 }
 
 const FeatureFlagToggle = ({
 	ariaDescribedBy,
 	companyId,
-	disabled: initialDisabled,
+	disabled,
 	featureFlagKey,
 	inputName,
 	labelOff,
 	labelOn,
+	onItemsChange,
 	toggled: initialToggled,
 }: IProps) => {
-	const [disabled, setDisabled] = useState(initialDisabled);
+	const [isLoading, setIsLoading] = useState(false);
 	const [toggled, setToggled] = useState(initialToggled);
 
 	async function updateToggled(newToggled: boolean) {
-		setDisabled(true);
+		setIsLoading(true);
 
 		try {
 			const response = await Liferay.Util.fetch(
@@ -47,9 +49,15 @@ const FeatureFlagToggle = ({
 			);
 
 			if (response.ok) {
+				const res = await response.json();
+
 				setToggled(newToggled);
-			}
-			else {
+
+
+				if (res.dependencyFeatureFlags.length) {
+					onItemsChange(res.dependencyFeatureFlags);
+				}
+			} else {
 				Liferay.Util.openToast({
 					message: Liferay.Language.get(
 						'could-not-update-feature-flag'
@@ -57,9 +65,8 @@ const FeatureFlagToggle = ({
 					type: 'danger',
 				});
 			}
-		}
-		finally {
-			setDisabled(false);
+		} finally {
+			setIsLoading(false);
 		}
 	}
 
@@ -67,7 +74,7 @@ const FeatureFlagToggle = ({
 		<>
 			<ClayToggle
 				aria-describedby={ariaDescribedBy}
-				disabled={disabled}
+				disabled={disabled || isLoading}
 				id={inputName}
 				label={toggled ? labelOn : labelOff}
 				onToggle={updateToggled}
