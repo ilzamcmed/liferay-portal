@@ -23,15 +23,21 @@ SearchContainer<FeatureFlagDisplay> searchContainer = featureFlagsDisplayContext
 			<div class="sheet-text"><%= featureFlagsDisplayContext.getDescription() %></div>
 		</clay:sheet-header>
 
+		<%
+			System.out.println("OrderByCol: " + searchContainer.getOrderByCol());
+			System.out.println("getOrderByTypeParam: " + searchContainer.getOrderByTypeParam());
+			System.out.println("Total: " + searchContainer.getTotal());
+		%>
+
 		<clay:sheet-section>
-		<react:component
-	module="js/FeatureFlagList"
-	props='<%=
-		HashMapBuilder.<String, Object>put(
-			"featureFlags", searchContainer.getResults()
-		).build()
-	%>'
-/>
+			<react:component
+				module="js/FeatureFlagList"
+				props='<%=
+					HashMapBuilder.<String, Object>put(
+						"featureFlags", searchContainer.getResults()
+					).build()
+				%>'
+			/>
 		</clay:sheet-section>
 	</clay:sheet>
 </clay:container-fluid>
