@@ -668,6 +668,31 @@ public abstract class BaseBuild implements Build {
 	}
 
 	@Override
+	public JenkinsCohort getJenkinsCohort() {
+		if (_jenkinsCohort != null) {
+			return _jenkinsCohort;
+		}
+
+		TopLevelBuild topLevelBuild = getTopLevelBuild();
+
+		if (topLevelBuild != null) {
+			_jenkinsCohort = topLevelBuild.getJenkinsCohort();
+
+			return _jenkinsCohort;
+		}
+
+		String cohortName = JenkinsResultsParserUtil.getCohortName();
+
+		if (!JenkinsResultsParserUtil.isNullOrEmpty(cohortName)) {
+			_jenkinsCohort = JenkinsCohort.getInstance(cohortName);
+
+			return _jenkinsCohort;
+		}
+
+		return null;
+	}
+
+	@Override
 	public JenkinsMaster getJenkinsMaster() {
 		return _jenkinsMaster;
 	}
@@ -1199,6 +1224,78 @@ public abstract class BaseBuild implements Build {
 	}
 
 	@Override
+	public Invocation invoke() {
+		JenkinsCohort jenkinsCohort = getJenkinsCohort();
+
+		JenkinsMaster jenkinsMaster =
+			jenkinsCohort.getMostAvailableJenkinsMaster(
+				_getInvokedBatchSize(), _getMinimumRAM(),
+				_getMaximumSlavesPerHost());
+
+		JSONObject jsonObject = JenkinsResultsParserUtil.invokeJenkinsBuild(
+			jenkinsMaster, getJobName(), getParameters());
+
+		Invocation invocation = new Invocation(
+			jenkinsMaster, jsonObject.getLong("queueId"));
+
+		_invocations.add(invocation);
+
+		return invocation;
+	}
+
+	@Override
+	public boolean isApplyReinvokeRules() {
+		if (!isCompleted() || !isFailing() || isFromArchive() ||
+			(badBuildNumbers.size() >= REINVOCATIONS_SIZE_MAX)) {
+
+			return false;
+		}
+
+		for (ReinvokeRule reinvokeRule : reinvokeRules) {
+			if (!reinvokeRule.matches(this)) {
+				continue;
+			}
+
+			reinvoke(reinvokeRule);
+
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public boolean isApplySlaveOfflineRules() {
+		if (!isCompleted() || !isFailing() || isFromArchive()) {
+			return false;
+		}
+
+		JenkinsSlave jenkinsSlave = getJenkinsSlave();
+
+		if (jenkinsSlave == null) {
+			return false;
+		}
+
+		jenkinsSlave.update();
+
+		if (jenkinsSlave.isOffline()) {
+			return false;
+		}
+
+		for (SlaveOfflineRule slaveOfflineRule : slaveOfflineRules) {
+			if (!slaveOfflineRule.matches(this)) {
+				continue;
+			}
+
+			takeSlaveOffline(slaveOfflineRule);
+
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
 	public boolean isBuildModified() {
 		return !status.equals(_previousStatus);
 	}
@@ -1455,171 +1552,81 @@ public abstract class BaseBuild implements Build {
 
 	@Override
 	public synchronized void update() {
+		if (skipUpdate()) {
+			return;
+		}
+
 		_duration = null;
 
 		String status = getStatus();
 
-		boolean hasModifiedDownstreamBuilds = false;
+		_previousStatus = status;
 
-		if (this instanceof ParentBuild) {
-			ParentBuild parentBuild = (ParentBuild)this;
+		try {
+			if (status.equals("missing") || status.equals("queued") ||
+				status.equals("starting")) {
 
-			hasModifiedDownstreamBuilds =
-				parentBuild.hasModifiedDownstreamBuilds();
-		}
+				JSONObject runningBuildJSONObject = getRunningBuildJSONObject();
 
-		if ((status.equals("completed") &&
-			 (isBuildModified() || hasModifiedDownstreamBuilds)) ||
-			!status.equals("completed")) {
+				if (runningBuildJSONObject != null) {
+					setBuildNumber(runningBuildJSONObject.getInt("number"));
+				}
+				else {
+					JSONObject queueItemJSONObject = null;
 
-			_previousStatus = this.status;
+					try {
+						queueItemJSONObject = getQueueItemJSONObject();
+					}
+					catch (IOException ioException) {
+						ioException.printStackTrace();
 
-			try {
-				if (status.equals("missing") || status.equals("queued") ||
-					status.equals("starting")) {
+						throw new RuntimeException(
+							"Unable to get queue item JSON", ioException);
+					}
 
-					JSONObject runningBuildJSONObject =
-						getRunningBuildJSONObject();
+					if (queueItemJSONObject != null) {
+						setStatus("queued");
+					}
+					else if (status.equals("queued") ||
+							 status.equals("starting")) {
 
-					if (runningBuildJSONObject != null) {
-						setBuildNumber(runningBuildJSONObject.getInt("number"));
+						setStatus("missing");
 					}
 					else {
-						JSONObject queueItemJSONObject = null;
+						if (_reinvocationCount >= REINVOCATIONS_SIZE_MAX) {
+							setResult("MISSING");
+
+							return;
+						}
+
+						String invocationURL =
+							JenkinsResultsParserUtil.getLocalURL(
+								getInvocationURL());
 
 						try {
-							queueItemJSONObject = getQueueItemJSONObject();
+							JenkinsResultsParserUtil.toString(invocationURL);
 						}
 						catch (IOException ioException) {
 							ioException.printStackTrace();
 
 							throw new RuntimeException(
-								"Unable to get queue item JSON", ioException);
+								"Unable to invoke build " + invocationURL,
+								ioException);
 						}
 
-						if (queueItemJSONObject != null) {
-							setStatus("queued");
-						}
-						else if (status.equals("queued") ||
-								 status.equals("starting")) {
+						setStatus("starting");
 
-							setStatus("missing");
-						}
-						else {
-							if (_reinvocationCount >= REINVOCATIONS_SIZE_MAX) {
-								setResult("MISSING");
-
-								return;
-							}
-
-							String invocationURL =
-								JenkinsResultsParserUtil.getLocalURL(
-									getInvocationURL());
-
-							try {
-								JenkinsResultsParserUtil.toString(
-									invocationURL);
-							}
-							catch (IOException ioException) {
-								ioException.printStackTrace();
-
-								throw new RuntimeException(
-									"Unable to invoke build " + invocationURL,
-									ioException);
-							}
-
-							setStatus("starting");
-
-							_reinvocationCount++;
-						}
-					}
-				}
-
-				if (this instanceof ParentBuild) {
-					ParentBuild parentBuild = (ParentBuild)this;
-
-					List<Build> downstreamBuilds =
-						parentBuild.getDownstreamBuilds(null);
-
-					List<Callable<Object>> callables = new ArrayList<>();
-
-					for (final Build downstreamBuild : downstreamBuilds) {
-						Callable<Object> callable = new Callable<Object>() {
-
-							@Override
-							public Object call() {
-								downstreamBuild.update();
-
-								return null;
-							}
-
-						};
-
-						callables.add(callable);
-					}
-
-					ParallelExecutor<Object> parallelExecutor =
-						new ParallelExecutor<>(callables, getExecutorService());
-
-					parallelExecutor.execute();
-
-					String result = getResult();
-
-					if ((result != null) &&
-						(downstreamBuilds.size() ==
-							parentBuild.getDownstreamBuildCount("completed"))) {
-
-						setResult(result);
-					}
-
-					findDownstreamBuilds();
-
-					if ((result == null) || result.equals("SUCCESS")) {
-						return;
-					}
-
-					JenkinsSlave jenkinsSlave = getJenkinsSlave();
-
-					if (jenkinsSlave != null) {
-						jenkinsSlave.update();
-
-						if (!fromArchive && !jenkinsSlave.isOffline()) {
-							for (SlaveOfflineRule slaveOfflineRule :
-									slaveOfflineRules) {
-
-								if (!slaveOfflineRule.matches(this)) {
-									continue;
-								}
-
-								takeSlaveOffline(slaveOfflineRule);
-
-								break;
-							}
-						}
-					}
-
-					if (this instanceof AxisBuild ||
-						this instanceof BatchBuild ||
-						this instanceof TopLevelBuild || fromArchive ||
-						(badBuildNumbers.size() >= REINVOCATIONS_SIZE_MAX)) {
-
-						return;
-					}
-
-					for (ReinvokeRule reinvokeRule : reinvokeRules) {
-						if (!reinvokeRule.matches(this)) {
-							continue;
-						}
-
-						reinvoke(reinvokeRule);
-
-						break;
+						_reinvocationCount++;
 					}
 				}
 			}
-			catch (IOException ioException) {
-				throw new RuntimeException(ioException);
-			}
+
+			isApplySlaveOfflineRules();
+
+			isApplyReinvokeRules();
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
 		}
 	}
 
@@ -3178,6 +3185,20 @@ public abstract class BaseBuild implements Build {
 		}
 	}
 
+	protected boolean skipUpdate() {
+		if (isBuildModified()) {
+			return false;
+		}
+
+		String status = getStatus();
+
+		if (!status.equals("completed")) {
+			return false;
+		}
+
+		return true;
+	}
+
 	protected String toJenkinsReportDateString(Date date, String timeZoneName) {
 		Properties buildProperties = null;
 
@@ -3420,6 +3441,44 @@ public abstract class BaseBuild implements Build {
 		return jobParameters;
 	}
 
+	private int _getInvokedBatchSize() {
+		String invokedJobBatchSize = getParameterValue(
+			"INVOKED_JOB_BATCH_SIZE");
+
+		if (JenkinsResultsParserUtil.isInteger(invokedJobBatchSize)) {
+			return Integer.parseInt(invokedJobBatchSize);
+		}
+
+		String testBatchSize = getParameterValue("TEST_BATCH_SIZE");
+
+		if (JenkinsResultsParserUtil.isInteger(testBatchSize)) {
+			return Integer.parseInt(testBatchSize);
+		}
+
+		return _INVOKED_BATCH_SIZE_DEFAULT;
+	}
+
+	private int _getMaximumSlavesPerHost() {
+		String maximumSlavesPerHost = getParameterValue(
+			"MAXIMUM_SLAVES_PER_HOST");
+
+		if (JenkinsResultsParserUtil.isInteger(maximumSlavesPerHost)) {
+			return Integer.parseInt(maximumSlavesPerHost);
+		}
+
+		return _MAXIMUM_SLAVES_PER_HOST;
+	}
+
+	private int _getMinimumRAM() {
+		String minimumSlaveRAM = getParameterValue("MINIMUM_SLAVE_RAM");
+
+		if (JenkinsResultsParserUtil.isInteger(minimumSlaveRAM)) {
+			return Integer.parseInt(minimumSlaveRAM);
+		}
+
+		return _MINIMUM_SLAVE_RAM_DEFAULT;
+	}
+
 	private List<Element> _getStopWatchRecordTableRowElements(
 		StopWatchRecord stopWatchRecord) {
 
@@ -3596,6 +3655,12 @@ public abstract class BaseBuild implements Build {
 	private static final FailureMessageGenerator[] _FAILURE_MESSAGE_GENERATORS =
 		{new GenericFailureMessageGenerator()};
 
+	private static final Integer _INVOKED_BATCH_SIZE_DEFAULT = 1;
+
+	private static final Integer _MAXIMUM_SLAVES_PER_HOST = 2;
+
+	private static final Integer _MINIMUM_SLAVE_RAM_DEFAULT = 12;
+
 	private static final String _NAME_JENKINS_REPORT_TIME_ZONE;
 
 	private static final int _PIXELS_WIDTH_EXPANDER = 20;
@@ -3640,6 +3705,8 @@ public abstract class BaseBuild implements Build {
 	private Boolean _buildDurationsEnabled;
 	private int _buildNumber = -1;
 	private Long _duration;
+	private final List<Invocation> _invocations = new ArrayList<>();
+	private JenkinsCohort _jenkinsCohort;
 	private JenkinsConsoleTextLoader _jenkinsConsoleTextLoader;
 	private JenkinsMaster _jenkinsMaster;
 	private JenkinsSlave _jenkinsSlave;

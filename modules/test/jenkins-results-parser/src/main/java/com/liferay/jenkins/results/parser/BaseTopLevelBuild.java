@@ -616,6 +616,11 @@ public abstract class BaseTopLevelBuild
 	}
 
 	@Override
+	public boolean isApplyReinvokeRules() {
+		return false;
+	}
+
+	@Override
 	public boolean isCompareToUpstream() {
 		return _compareToUpstream;
 	}
@@ -688,6 +693,10 @@ public abstract class BaseTopLevelBuild
 
 	@Override
 	public synchronized void update() {
+		if (skipUpdate()) {
+			return;
+		}
+
 		long start = JenkinsResultsParserUtil.getCurrentTimeMillis();
 
 		super.update();

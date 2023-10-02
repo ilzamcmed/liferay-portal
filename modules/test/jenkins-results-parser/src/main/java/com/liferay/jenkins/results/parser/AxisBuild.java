@@ -492,6 +492,11 @@ public class AxisBuild extends BaseBuild {
 	}
 
 	@Override
+	public boolean isApplySlaveOfflineRules() {
+		return false;
+	}
+
+	@Override
 	public void reinvoke() {
 		throw new RuntimeException("Axis builds cannot be reinvoked");
 	}

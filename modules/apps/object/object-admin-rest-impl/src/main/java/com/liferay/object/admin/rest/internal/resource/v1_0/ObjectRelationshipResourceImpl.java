@@ -230,6 +230,12 @@ public class ObjectRelationshipResourceImpl
 			Long objectRelationshipId, ObjectRelationship objectRelationship)
 		throws Exception {
 
+		if (Validator.isNotNull(objectRelationship.getEdge()) &&
+			!FeatureFlagManagerUtil.isEnabled("LPS-187142")) {
+
+			throw new UnsupportedOperationException();
+		}
+
 		if (Validator.isNotNull(
 				objectRelationship.getParameterObjectFieldName())) {
 
@@ -256,7 +262,8 @@ public class ObjectRelationshipResourceImpl
 				objectRelationshipId,
 				GetterUtil.getLong(
 					objectRelationship.getParameterObjectFieldId()),
-				objectRelationship.getDeletionTypeAsString(), false,
+				objectRelationship.getDeletionTypeAsString(),
+				GetterUtil.getBoolean(objectRelationship.getEdge()),
 				LocalizedMapUtil.getLocalizedMap(
 					objectRelationship.getLabel())));
 	}

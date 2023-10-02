@@ -50,7 +50,7 @@ interface ObjectFieldFormBaseProps {
 	objectFieldTypes: ObjectFieldType[];
 	objectRelationshipId?: number;
 	onAggregationFilterChange?: (aggregationFilterArray: []) => void;
-	onRelationshipChange?: (
+	onObjectRelationshipChange?: (
 		objectDefinitionExternalReferenceCode2: string
 	) => void;
 	setValues: (values: Partial<ObjectField>) => void;
@@ -58,6 +58,7 @@ interface ObjectFieldFormBaseProps {
 
 type TObjectRelationship = {
 	deletionType: string;
+	edge: boolean;
 	id: number;
 	label: LocalizedValue<string>;
 	name: string;
@@ -115,7 +116,7 @@ const fieldSettingsMap = new Map<string, ObjectFieldSetting[]>([
 async function getObjectFieldSettingsByBusinessType(
 	objectRelationshipId: number,
 	setListTypeDefinitions: (value: ListTypeDefinition[]) => void,
-	setOneToManyRelationship: (value: TObjectRelationship) => void,
+	setOneToManyObjectRelationship: (value: TObjectRelationship) => void,
 	setSelectedOutput: (value: string) => void,
 	values: Partial<ObjectField>
 ) {
@@ -147,7 +148,7 @@ async function getObjectFieldSettingsByBusinessType(
 		>(objectRelationshipId!);
 
 		if (relationshipData.id) {
-			setOneToManyRelationship(relationshipData);
+			setOneToManyObjectRelationship(relationshipData);
 		}
 	}
 }
@@ -166,7 +167,7 @@ export default function ObjectFieldFormBase({
 	objectFieldTypes,
 	objectRelationshipId,
 	onAggregationFilterChange,
-	onRelationshipChange,
+	onObjectRelationshipChange,
 	setValues,
 }: ObjectFieldFormBaseProps) {
 	const [listTypeDefinitions, setListTypeDefinitions] = useState<
@@ -252,7 +253,9 @@ export default function ObjectFieldFormBase({
 			oneToManyObjectRelationship &&
 			oneToManyObjectRelationship.deletionType !== 'disassociate'
 		) {
-			return false;
+			return Liferay.FeatureFlags['LPS-187142']
+				? oneToManyObjectRelationship.edge
+				: false;
 		}
 
 		if (values.readOnly === 'true' || values.readOnly === 'conditional') {
@@ -394,7 +397,7 @@ export default function ObjectFieldFormBase({
 						values.objectFieldSettings as ObjectFieldSetting[]
 					}
 					onAggregationFilterChange={onAggregationFilterChange}
-					onRelationshipChange={onRelationshipChange}
+					onObjectRelationshipChange={onObjectRelationshipChange}
 					setValues={setValues}
 				/>
 			)}

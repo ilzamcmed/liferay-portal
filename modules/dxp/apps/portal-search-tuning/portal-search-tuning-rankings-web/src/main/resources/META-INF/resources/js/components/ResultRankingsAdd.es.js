@@ -35,7 +35,7 @@ const SCOPE_INFO = {
 	},
 };
 
-function ResultRankingsAdd({cancelUrl, formName, namespace}) {
+function ResultRankingsAdd({cancelURL, fetchSitesURL, formName, namespace}) {
 	const [errors, setErrors] = useState({});
 	const [scopeType, setScopeType] = useState(SCOPE_TYPES.EVERYTHING);
 	const [scope, setScope] = useState('');
@@ -84,7 +84,7 @@ function ResultRankingsAdd({cancelUrl, formName, namespace}) {
 	};
 
 	const _handleCancel = () => {
-		navigate(cancelUrl);
+		navigate(cancelURL);
 	};
 
 	const _handleSearchQueryChange = (event) => {
@@ -170,7 +170,7 @@ function ResultRankingsAdd({cancelUrl, formName, namespace}) {
 			{(Liferay.FeatureFlags['LPS-159650'] ||
 				Liferay.FeatureFlags['LPS-157988']) && (
 				<ClayForm.Group>
-					<label htmlFor="searchScope">
+					<label htmlFor="searchScopeType">
 						{Liferay.Language.get('scope')}
 
 						<ClayIcon
@@ -183,6 +183,7 @@ function ResultRankingsAdd({cancelUrl, formName, namespace}) {
 						aria-label={Liferay.Language.get('scope')}
 						className="form-control form-control-select"
 						displayType="unstyled"
+						id="searchScopeType"
 						onClick={_handleScopeDropdownChange}
 						ref={alignElementRef}
 					>
@@ -242,7 +243,7 @@ function ResultRankingsAdd({cancelUrl, formName, namespace}) {
 					<ScopeSelect
 						disabled={false}
 						error={errors.scope}
-						fetchItemsUrl="/o/headless-admin-user/v1.0/sites"
+						fetchItemsUrl={fetchSitesURL}
 						locator={{
 							id: 'externalReferenceCode',
 							label: 'descriptiveName',
@@ -271,7 +272,9 @@ function ResultRankingsAdd({cancelUrl, formName, namespace}) {
 					<ScopeSelect
 						disabled={false}
 						error={errors.scope}
-						fetchItemsUrl="/o/search-experiences-rest/v1.0/sxp-blueprints"
+						fetchItemsUrl={`${
+							window.location.origin
+						}${Liferay.ThemeDisplay.getPathContext()}/o/search-experiences-rest/v1.0/sxp-blueprints`}
 						locator={{
 							id: 'externalReferenceCode',
 							label: 'title',
@@ -312,11 +315,18 @@ function ResultRankingsAdd({cancelUrl, formName, namespace}) {
 	);
 }
 
-export default function ({cancelUrl, formName, learnResources, namespace}) {
+export default function ({
+	cancelURL,
+	fetchSitesURL,
+	formName,
+	learnResources,
+	namespace = '',
+}) {
 	return (
 		<LearnResourcesContext.Provider value={learnResources}>
 			<ResultRankingsAdd
-				cancelUrl={cancelUrl}
+				cancelURL={cancelURL}
+				fetchSitesURL={fetchSitesURL}
 				formName={formName}
 				namespace={namespace}
 			/>

@@ -17,6 +17,7 @@ taglib uri="http://liferay.com/tld/ui" prefix="liferay-ui" %>
 
 <%@ page import="com.liferay.learn.LearnMessageUtil" %><%@
 page import="com.liferay.portal.kernel.language.LanguageUtil" %><%@
+page import="com.liferay.portal.kernel.portlet.url.builder.ResourceURLBuilder" %><%@
 page import="com.liferay.portal.kernel.servlet.SessionErrors" %><%@
 page import="com.liferay.portal.kernel.util.Constants" %><%@
 page import="com.liferay.portal.kernel.util.HashMapBuilder" %><%@
@@ -72,7 +73,16 @@ renderResponse.setTitle(LanguageUtil.get(request, "new-ranking"));
 			module="js/components/ResultRankingsAdd.es"
 			props='<%=
 				HashMapBuilder.<String, Object>put(
-					"cancelUrl", redirect
+					"cancelURL", redirect
+				).put(
+					"fetchSitesURL",
+					ResourceURLBuilder.createResourceURL(
+						renderResponse
+					).setCMD(
+						"getSitesJSONObject"
+					).setResourceID(
+						"/result_rankings/get_sites"
+					).buildString()
 				).put(
 					"formName", formName
 				).put(

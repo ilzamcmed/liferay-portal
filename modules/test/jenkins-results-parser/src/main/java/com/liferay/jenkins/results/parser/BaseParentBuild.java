@@ -438,6 +438,49 @@ public abstract class BaseParentBuild extends BaseBuild implements ParentBuild {
 		return super.replaceBuildURL(text);
 	}
 
+	@Override
+	public void update() {
+		if (skipUpdate()) {
+			return;
+		}
+
+		super.update();
+
+		List<Build> downstreamBuilds = getDownstreamBuilds(null);
+
+		List<Callable<Object>> callables = new ArrayList<>();
+
+		for (final Build downstreamBuild : downstreamBuilds) {
+			Callable<Object> callable = new Callable<Object>() {
+
+				@Override
+				public Object call() {
+					downstreamBuild.update();
+
+					return null;
+				}
+
+			};
+
+			callables.add(callable);
+		}
+
+		ParallelExecutor<Object> parallelExecutor = new ParallelExecutor<>(
+			callables, getExecutorService());
+
+		parallelExecutor.execute();
+
+		String result = getResult();
+
+		if ((result != null) &&
+			(downstreamBuilds.size() == getDownstreamBuildCount("completed"))) {
+
+			setResult(result);
+		}
+
+		findDownstreamBuilds();
+	}
+
 	protected BaseParentBuild(String url) {
 		super(url);
 	}
@@ -595,6 +638,21 @@ public abstract class BaseParentBuild extends BaseBuild implements ParentBuild {
 		else {
 			setStatus("completed");
 		}
+	}
+
+	@Override
+	protected boolean skipUpdate() {
+		if (isBuildModified() || hasModifiedDownstreamBuilds()) {
+			return false;
+		}
+
+		String status = getStatus();
+
+		if (!status.equals("completed")) {
+			return false;
+		}
+
+		return true;
 	}
 
 	private List<Build> _downstreamBuilds;

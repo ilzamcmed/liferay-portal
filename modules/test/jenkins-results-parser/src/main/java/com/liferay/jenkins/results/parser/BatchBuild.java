@@ -281,23 +281,10 @@ public class BatchBuild extends BaseParentBuild {
 	}
 
 	@Override
-	public synchronized void update() {
-		super.update();
-
+	public boolean isApplyReinvokeRules() {
 		if (badBuildNumbers.size() >= REINVOCATIONS_SIZE_MAX) {
-			return;
+			return false;
 		}
-
-		String status = getStatus();
-		String result = getResult();
-
-		if ((status.equals("completed") && result.equals("SUCCESS")) ||
-			fromArchive) {
-
-			return;
-		}
-
-		boolean reinvoked = false;
 
 		List<Build> builds = new ArrayList<>();
 
@@ -306,26 +293,22 @@ public class BatchBuild extends BaseParentBuild {
 		builds.addAll(getDownstreamBuilds("completed"));
 
 		for (Build build : builds) {
-			if (reinvoked) {
-				break;
+			if (!isCompleted() || !isFailing() || isFromArchive()) {
+				continue;
 			}
 
 			for (ReinvokeRule reinvokeRule : reinvokeRules) {
-				String buildResult = build.getResult();
-
-				if ((buildResult == null) || buildResult.equals("SUCCESS") ||
-					!reinvokeRule.matches(build)) {
-
+				if (!reinvokeRule.matches(build)) {
 					continue;
 				}
 
 				reinvoke(reinvokeRule);
 
-				reinvoked = true;
-
-				break;
+				return true;
 			}
 		}
+
+		return false;
 	}
 
 	protected BatchBuild(String url) {

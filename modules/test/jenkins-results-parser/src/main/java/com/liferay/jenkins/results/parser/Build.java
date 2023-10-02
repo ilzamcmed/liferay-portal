@@ -87,6 +87,8 @@ public interface Build {
 
 	public Long getInvokedTime();
 
+	public JenkinsCohort getJenkinsCohort();
+
 	public JenkinsMaster getJenkinsMaster();
 
 	public JenkinsSlave getJenkinsSlave();
@@ -153,6 +155,12 @@ public interface Build {
 
 	public boolean hasGenericCIFailure();
 
+	public Invocation invoke();
+
+	public boolean isApplyReinvokeRules();
+
+	public boolean isApplySlaveOfflineRules();
+
 	public boolean isBuildModified();
 
 	public boolean isCompareToUpstream();
@@ -206,6 +214,43 @@ public interface Build {
 		public String getUpstreamBranchName();
 
 		public String getUpstreamBranchSHA();
+
+	}
+
+	public class Invocation {
+
+		public Invocation(JenkinsMaster jenkinsMaster) {
+			_jenkinsMaster = jenkinsMaster;
+		}
+
+		public Invocation(JenkinsMaster jenkinsMaster, long queueId) {
+			_jenkinsMaster = jenkinsMaster;
+			_queueId = queueId;
+		}
+
+		public int getBuildNumber() {
+			return _buildNumber;
+		}
+
+		public JenkinsMaster getJenkinsMaster() {
+			return _jenkinsMaster;
+		}
+
+		public long getQueueId() {
+			return _queueId;
+		}
+
+		public void setBuildNumber(int buildNumber) {
+			_buildNumber = buildNumber;
+		}
+
+		public void setQueueId(long queueId) {
+			_queueId = queueId;
+		}
+
+		private int _buildNumber;
+		private final JenkinsMaster _jenkinsMaster;
+		private long _queueId;
 
 	}
 

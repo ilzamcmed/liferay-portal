@@ -11,7 +11,6 @@ import ClayLabel from '@clayui/label';
 import ClayLayout from '@clayui/layout';
 import ClayModal from '@clayui/modal';
 import classNames from 'classnames';
-import {format} from 'date-fns';
 import {InputLocalized} from 'frontend-js-components-web';
 import {IClientExtensionRenderer, fetch, openModal, sub} from 'frontend-js-web';
 import React, {useEffect, useState} from 'react';
@@ -83,7 +82,7 @@ function AddFDSFilterModalContent({
 	>();
 	const fdsFilterLabelTranslations = filter?.label_i18n ?? {};
 	const [from, setFrom] = useState<string>(
-		(filter as IDateFilter)?.from ?? format(new Date(), 'yyyy-MM-dd')
+		(filter as IDateFilter)?.from ?? ''
 	);
 	const [i18nFilterLabels, setI18nFilterLabels] = useState(
 		fdsFilterLabelTranslations
@@ -96,20 +95,18 @@ function AddFDSFilterModalContent({
 			: 'include'
 	);
 	const [isValidDateRange, setIsValidDateRange] = useState<boolean>(true);
-	const [saveButtonDisabled, setSaveButtonDisabled] = useState<boolean>();
 	const [multiple, setMultiple] = useState<boolean>(
 		(filter as ISelectionFilter)?.multiple ?? true
 	);
 	const [label, setLabel] = useState(filter?.label || '');
 	const [picklists, setPicklists] = useState<IPickList[]>([]);
 	const [preselectedValues, setPreselectedValues] = useState<any[]>([]);
+	const [saveButtonDisabled, setSaveButtonDisabled] = useState<boolean>();
 	const [selectedField, setSelectedField] = useState<IField | null>(
 		fields.find((item) => item.name === filter?.fieldName) || null
 	);
 	const [selectedPicklist, setSelectedPicklist] = useState<IPickList>();
-	const [to, setTo] = useState<string>(
-		(filter as IDateFilter)?.to ?? format(new Date(), 'yyyy-MM-dd')
-	);
+	const [to, setTo] = useState<string>((filter as IDateFilter)?.to ?? '');
 
 	useEffect(() => {
 		getAllPicklists().then((items) => {
@@ -246,13 +243,13 @@ function AddFDSFilterModalContent({
 		fieldNames?.includes(item.name) ? item.name : undefined
 	);
 
-	const CellRendererDropdown = ({
-		cellRenderers,
+	const FieldNameDropdown = ({
+		fields,
 		inUseFields,
 		namespace,
 		onItemClick,
 	}: {
-		cellRenderers: IField[];
+		fields: IField[];
 		inUseFields: (string | undefined)[];
 		namespace: string;
 		onItemClick: Function;
@@ -261,13 +258,14 @@ function AddFDSFilterModalContent({
 			<ClayDropDown
 				closeOnClick
 				menuElementAttrs={{
-					className: 'fds-cell-renderers-dropdown-menu',
+					className: 'fds-field-name-dropdown-menu',
 				}}
 				trigger={
 					<ClayButton
-						aria-labelledby={`${namespace}cellRenderersLabel`}
+						aria-labelledby={`${namespace}fieldsLabel`}
 						className="form-control form-control-select form-control-select-secondary"
 						displayType="secondary"
+						id={selectedFieldFormElementId}
 					>
 						{selectedField
 							? selectedField.label
@@ -275,8 +273,8 @@ function AddFDSFilterModalContent({
 					</ClayButton>
 				}
 			>
-				<ClayDropDown.ItemList items={cellRenderers} role="listbox">
-					{cellRenderers.map((cellRenderer) => (
+				<ClayDropDown.ItemList items={fields} role="listbox">
+					{fields.map((field) => (
 						<ClayDropDown.Item
 							className="align-items-center d-flex justify-content-between"
 							disabled={
@@ -284,13 +282,13 @@ function AddFDSFilterModalContent({
 								(filterType === EFilterType.SELECTION &&
 									!picklists.length)
 							}
-							key={cellRenderer.name}
-							onClick={() => onItemClick(cellRenderer)}
+							key={field.name}
+							onClick={() => onItemClick(field)}
 							roleItem="option"
 						>
-							{cellRenderer.label}
+							{field.label}
 
-							{inUseFields.includes(cellRenderer.name) && (
+							{inUseFields.includes(field.name) && (
 								<ClayLabel displayType="info">
 									{Liferay.Language.get('in-use')}
 								</ClayLabel>
@@ -330,7 +328,7 @@ function AddFDSFilterModalContent({
 					<ClayForm.Group>
 						<InputLocalized
 							id={nameFormElementId}
-							label={Liferay.Language.get('label')}
+							label={Liferay.Language.get('name')}
 							name="label"
 							onChange={setI18nFilterLabels}
 							translations={i18nFilterLabels}
@@ -339,7 +337,7 @@ function AddFDSFilterModalContent({
 				) : (
 					<ClayForm.Group>
 						<label htmlFor={nameFormElementId}>
-							{Liferay.Language.get('label')}
+							{Liferay.Language.get('name')}
 
 							<span
 								className="label-icon lfr-portal-tooltip ml-2"
@@ -352,12 +350,12 @@ function AddFDSFilterModalContent({
 						</label>
 
 						<ClayInput
-							aria-label={Liferay.Language.get('label')}
+							aria-label={Liferay.Language.get('name')}
 							name={nameFormElementId}
 							onChange={(event) => setLabel(event.target.value)}
 							placeholder={
 								selectedField?.label ||
-								Liferay.Language.get('label')
+								Liferay.Language.get('name')
 							}
 							value={label}
 						/>
@@ -373,8 +371,8 @@ function AddFDSFilterModalContent({
 						{Liferay.Language.get('filter-by')}
 					</label>
 
-					<CellRendererDropdown
-						cellRenderers={fields}
+					<FieldNameDropdown
+						fields={fields}
 						inUseFields={inUseFields}
 						namespace={namespace}
 						onItemClick={(item: IField) => {
@@ -617,8 +615,7 @@ function Filters({fdsFilterClientExtensions, fdsView, namespace}: IProps) {
 				(filterType === EFilterType.SELECTION &&
 					item.format === EFieldFormat.STRING) ||
 				(filterType === EFilterType.DATE_RANGE &&
-					(item.format === EFieldFormat.DATE_TIME ||
-						item.format === EFieldFormat.DATE))
+					item.format === EFieldFormat.DATE)
 		);
 
 		if (!availableFields.length) {
@@ -684,6 +681,15 @@ function Filters({fdsFilterClientExtensions, fdsView, namespace}: IProps) {
 					onSave={(newfilter) => {
 						const newFilters = filters.map((item) => {
 							if (item.id === newfilter.id) {
+								if (
+									item.filterType === EFilterType.DATE_RANGE
+								) {
+									(newfilter as IDateFilter).from =
+										(newfilter as IDateFilter).from || '';
+									(newfilter as IDateFilter).to =
+										(newfilter as IDateFilter).to || '';
+								}
+
 								return {...item, ...newfilter};
 							}
 
@@ -780,7 +786,7 @@ function Filters({fdsFilterClientExtensions, fdsView, namespace}: IProps) {
 				]}
 				fields={[
 					{
-						label: Liferay.Language.get('label'),
+						label: Liferay.Language.get('name'),
 						name: 'label',
 					},
 					{

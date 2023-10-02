@@ -328,6 +328,10 @@ public class FDSViewFragmentRenderer implements FragmentRenderer {
 	}
 
 	private JSONObject _getDateJSONObject(Object object) {
+		if (object == null) {
+			return null;
+		}
+
 		Calendar calendar = Calendar.getInstance();
 
 		Timestamp timestamp = (Timestamp)object;
@@ -440,16 +444,35 @@ public class FDSViewFragmentRenderer implements FragmentRenderer {
 				String type = MapUtil.getString(properties, "type");
 
 				if (Objects.equals(type, "date")) {
+					JSONObject fromJSONObject = _getDateJSONObject(
+						properties.get("from"));
+					JSONObject toJSONObject = _getDateJSONObject(
+						properties.get("to"));
+
+					boolean hasPreloadedData =
+						(fromJSONObject != null) || (toJSONObject != null);
+
 					return JSONUtil.put(
+						"active", hasPreloadedData
+					).put(
 						"entityFieldType", FDSEntityFieldTypes.DATE
 					).put(
 						"id", properties.get("fieldName")
 					).put(
 						"label", _getValue("label", "fieldName", properties)
 					).put(
-						"max", _getDateJSONObject(properties.get("to"))
-					).put(
-						"min", _getDateJSONObject(properties.get("from"))
+						"preloadedData",
+						() -> {
+							if (!hasPreloadedData) {
+								return null;
+							}
+
+							return JSONUtil.put(
+								"from", fromJSONObject
+							).put(
+								"to", toJSONObject
+							);
+						}
 					).put(
 						"type", "dateRange"
 					);
@@ -496,7 +519,7 @@ public class FDSViewFragmentRenderer implements FragmentRenderer {
 					).put(
 						"multiple", properties.get("multiple")
 					).put(
-						"selectedData",
+						"preloadedData",
 						JSONUtil.put(
 							"exclude", false
 						).put(
@@ -539,7 +562,7 @@ public class FDSViewFragmentRenderer implements FragmentRenderer {
 					).put(
 						"id", properties.get("fieldName")
 					).put(
-						"label", properties.get("name")
+						"label", _getValue("label", "fieldName", properties)
 					).put(
 						"moduleURL", fdsFilterCET.getURL()
 					).put(
