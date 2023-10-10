@@ -121,17 +121,18 @@ public class FeatureFlagApplication extends Application {
 		return HashMapBuilder.<String, Object>put(
 			"companyId", featureFlagDisplay.getCompanyId()
 		).put(
+			"dependenciesFulfilled",
+			featureFlagDisplay.isDependenciesFulfilled()
+		).put(
 			"dependencyKeys", featureFlagDisplay.getDependencyKeys()
 		).put(
 			"description", featureFlagDisplay.getDescription()
 		).put(
 			"enabled", featureFlagDisplay.isEnabled()
 		).put(
-			"featureFlagKey", featureFlagDisplay.getKey()
-		).put(
 			"featureFlagType", featureFlagDisplay.getFeatureFlagType()
 		).put(
-			"locked", !featureFlagDisplay.isDependenciesFulfilled()
+			"key", featureFlagDisplay.getKey()
 		).put(
 			"title", featureFlagDisplay.getTitle()
 		).build();
