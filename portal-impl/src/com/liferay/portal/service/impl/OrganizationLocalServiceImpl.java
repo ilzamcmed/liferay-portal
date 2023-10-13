@@ -84,9 +84,9 @@ import com.liferay.portal.service.base.OrganizationLocalServiceBaseImpl;
 import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.util.PropsValues;
 import com.liferay.portlet.usersadmin.search.OrganizationUsersSearcher;
+import com.liferay.portlet.usersadmin.util.UsersAdminUtil;
 import com.liferay.users.admin.kernel.file.uploads.UserFileUploadsSettings;
 import com.liferay.users.admin.kernel.organization.types.OrganizationTypesSettings;
-import com.liferay.users.admin.kernel.util.UsersAdminUtil;
 import com.liferay.util.dao.orm.CustomSQLUtil;
 
 import java.io.Serializable;
@@ -420,7 +420,7 @@ public class OrganizationLocalServiceImpl
 				null, null, true, serviceContext);
 		}
 
-		addUserOrganization(user.getUserId(), organizationId);
+		_userLocalService.addOrganizationUser(organizationId, user);
 
 		return user;
 	}

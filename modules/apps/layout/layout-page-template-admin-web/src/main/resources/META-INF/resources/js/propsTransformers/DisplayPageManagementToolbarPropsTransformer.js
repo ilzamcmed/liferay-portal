@@ -8,16 +8,16 @@ import {openSimpleInputModal} from 'frontend-js-web';
 import openDeletePageTemplateModal from '../modal/openDeletePageTemplateModal';
 
 export default function propsTransformer({portletNamespace, ...otherProps}) {
-	const deleteSelectedDisplayPages = () => {
+	const deleteSelectedEntries = (itemData) => {
 		openDeletePageTemplateModal({
 			onDelete: () => {
 				const form = document.getElementById(`${portletNamespace}fm`);
 
 				if (form) {
-					submitForm(form);
+					submitForm(form, itemData?.deleteSelectedEntriesURL);
 				}
 			},
-			title: Liferay.Language.get('display-page-templates'),
+			title: Liferay.Language.get('entries'),
 		});
 	};
 
@@ -36,8 +36,8 @@ export default function propsTransformer({portletNamespace, ...otherProps}) {
 
 			const action = data?.action;
 
-			if (action === 'deleteSelectedDisplayPages') {
-				deleteSelectedDisplayPages();
+			if (action === 'deleteSelectedEntries') {
+				deleteSelectedEntries(data);
 			}
 			else if (action === 'exportDisplayPages') {
 				exportDisplayPages(data);

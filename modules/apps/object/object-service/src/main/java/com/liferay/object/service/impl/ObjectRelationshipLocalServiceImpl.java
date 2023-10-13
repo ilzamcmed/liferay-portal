@@ -12,6 +12,7 @@ import com.liferay.object.constants.ObjectRelationshipConstants;
 import com.liferay.object.definition.util.ObjectDefinitionUtil;
 import com.liferay.object.exception.DuplicateObjectRelationshipException;
 import com.liferay.object.exception.NoSuchObjectRelationshipException;
+import com.liferay.object.exception.ObjectRelationshipDeletionTypeException;
 import com.liferay.object.exception.ObjectRelationshipEdgeException;
 import com.liferay.object.exception.ObjectRelationshipNameException;
 import com.liferay.object.exception.ObjectRelationshipParameterObjectFieldIdException;
@@ -254,11 +255,11 @@ public class ObjectRelationshipLocalServiceImpl
 			objectRelationshipPersistence.getDataSource());
 
 		ObjectDBManagerUtil.createIndexMetadata(
-			pkObjectFieldDBColumnName1, connection,
-			objectRelationship.getDBTableName(), false);
+			connection, objectRelationship.getDBTableName(), false,
+			pkObjectFieldDBColumnName1);
 		ObjectDBManagerUtil.createIndexMetadata(
-			pkObjectFieldDBColumnName2, connection,
-			objectRelationship.getDBTableName(), false);
+			connection, objectRelationship.getDBTableName(), false,
+			pkObjectFieldDBColumnName2);
 
 		return objectRelationship;
 	}
@@ -335,6 +336,14 @@ public class ObjectRelationshipLocalServiceImpl
 
 			_objectFieldLocalService.deleteRelationshipTypeObjectField(
 				objectRelationship.getObjectFieldId2());
+
+			for (ObjectRelationship parameterObjectFieldIdObjectRelationship :
+					objectRelationshipPersistence.findByParameterObjectFieldId(
+						objectRelationship.getObjectFieldId2())) {
+
+				objectRelationshipLocalService.deleteObjectRelationship(
+					parameterObjectFieldIdObjectRelationship);
+			}
 		}
 		else if (Objects.equals(
 					objectRelationship.getType(),
@@ -757,6 +766,7 @@ public class ObjectRelationshipLocalServiceImpl
 			_objectDefinitionPersistence.findByPrimaryKey(
 				objectRelationship.getObjectDefinitionId2()),
 			parameterObjectFieldId, objectRelationship.getType());
+		_validateDeletionType(deletionType, edge);
 		_validateEdge(edge, objectRelationship);
 
 		if (Objects.equals(
@@ -863,10 +873,9 @@ public class ObjectRelationshipLocalServiceImpl
 				dbTableName, objectField.getDBColumnName(), "Long"));
 
 		ObjectDBManagerUtil.createIndexMetadata(
-			objectField.getDBColumnName(),
 			_currentConnection.getConnection(
 				objectRelationshipPersistence.getDataSource()),
-			dbTableName, false);
+			dbTableName, false, objectField.getDBColumnName());
 
 		ObjectDefinitionLocalService objectDefinitionLocalService =
 			_objectDefinitionLocalServiceSnapshot.get();
@@ -1091,6 +1100,19 @@ public class ObjectRelationshipLocalServiceImpl
 		objectRelationship.setLabelMap(labelMap);
 
 		return objectRelationshipPersistence.update(objectRelationship);
+	}
+
+	private void _validateDeletionType(String deletionType, boolean edge)
+		throws PortalException {
+
+		if (edge &&
+			!StringUtil.equals(
+				deletionType,
+				ObjectRelationshipConstants.DELETION_TYPE_CASCADE)) {
+
+			throw new ObjectRelationshipDeletionTypeException.
+				MustHaveCascadeDeletionType();
+		}
 	}
 
 	private void _validateEdge(

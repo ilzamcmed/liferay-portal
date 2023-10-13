@@ -11,6 +11,7 @@ import com.liferay.asset.kernel.service.AssetCategoryServiceUtil;
 import com.liferay.asset.kernel.service.AssetVocabularyServiceUtil;
 import com.liferay.asset.tags.item.selector.AssetTagsItemSelectorReturnType;
 import com.liferay.asset.tags.item.selector.criterion.AssetTagsItemSelectorCriterion;
+import com.liferay.depot.util.SiteConnectedGroupGroupProviderUtil;
 import com.liferay.digital.signature.configuration.DigitalSignatureConfiguration;
 import com.liferay.digital.signature.configuration.DigitalSignatureConfigurationUtil;
 import com.liferay.document.library.constants.DLPortletKeys;
@@ -153,6 +154,15 @@ public class DLAdminManagementToolbarDisplayContext
 				dropdownItem.setQuickAction(true);
 			}
 		).add(
+			() -> stagedActions && !user.isGuestUser(),
+			dropdownItem -> {
+				dropdownItem.putData("action", "move");
+				dropdownItem.setIcon("move-folder");
+				dropdownItem.setLabel(
+					LanguageUtil.get(_httpServletRequest, "move"));
+				dropdownItem.setQuickAction(true);
+			}
+		).add(
 			() ->
 				stagedActions && !user.isGuestUser() &&
 				FeatureFlagManagerUtil.isEnabled("LPS-182512"),
@@ -162,15 +172,6 @@ public class DLAdminManagementToolbarDisplayContext
 				dropdownItem.setLabel(
 					LanguageUtil.get(_httpServletRequest, "copy-to"));
 				dropdownItem.setQuickAction(false);
-			}
-		).add(
-			() -> stagedActions && !user.isGuestUser(),
-			dropdownItem -> {
-				dropdownItem.putData("action", "move");
-				dropdownItem.setIcon("move-folder");
-				dropdownItem.setLabel(
-					LanguageUtil.get(_httpServletRequest, "move"));
-				dropdownItem.setQuickAction(true);
 			}
 		).add(
 			() -> stagedActions && !user.isGuestUser(),
@@ -585,8 +586,9 @@ public class DLAdminManagementToolbarDisplayContext
 			"vocabularyIds",
 			StringUtil.merge(
 				AssetVocabularyServiceUtil.getGroupsVocabularies(
-					PortalUtil.getCurrentAndAncestorSiteGroupIds(
-						_themeDisplay.getScopeGroupId()),
+					SiteConnectedGroupGroupProviderUtil.
+						getCurrentAndAncestorSiteAndDepotGroupIds(
+							_themeDisplay.getScopeGroupId()),
 					DLFileEntryConstants.getClassName()),
 				assetVocabulary -> String.valueOf(
 					assetVocabulary.getVocabularyId()),
@@ -975,7 +977,8 @@ public class DLAdminManagementToolbarDisplayContext
 
 		List<AssetVocabulary> assetVocabularies =
 			AssetVocabularyServiceUtil.getGroupVocabularies(
-				PortalUtil.getCurrentAndAncestorSiteGroupIds(scopeGroupId));
+				SiteConnectedGroupGroupProviderUtil.
+					getCurrentAndAncestorSiteAndDepotGroupIds(scopeGroupId));
 
 		for (AssetVocabulary assetVocabulary : assetVocabularies) {
 			if (!assetVocabulary.isAssociatedToClassNameId(

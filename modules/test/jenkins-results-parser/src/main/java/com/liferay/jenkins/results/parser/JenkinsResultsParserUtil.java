@@ -169,6 +169,10 @@ public class JenkinsResultsParserUtil {
 			_initializeRedactTokens();
 		}
 
+		if (_forbiddenRedactTokens.contains(token)) {
+			return;
+		}
+
 		_redactTokens.add(token);
 	}
 
@@ -735,6 +739,12 @@ public class JenkinsResultsParserUtil {
 	public static String executeJenkinsScript(
 		String jenkinsMasterName, String script) {
 
+		return executeJenkinsScript(jenkinsMasterName, script, false);
+	}
+
+	public static String executeJenkinsScript(
+		String jenkinsMasterName, String script, boolean rawResponse) {
+
 		try {
 			String url = fixURL(
 				getLocalURL("http://" + jenkinsMasterName + "/script"));
@@ -799,11 +809,15 @@ public class JenkinsResultsParserUtil {
 			String responseText = readInputStream(
 				httpURLConnection.getInputStream());
 
-			return combine(
-				jenkinsMasterName, ":\n",
-				responseText.substring(
-					responseText.lastIndexOf("<pre>") + 5,
-					responseText.lastIndexOf("</pre>")));
+			String rawResponseText = responseText.substring(
+				responseText.lastIndexOf("<pre>") + 5,
+				responseText.lastIndexOf("</pre>"));
+
+			if (rawResponse) {
+				return rawResponseText.trim();
+			}
+
+			return combine(jenkinsMasterName, ":\n", rawResponseText);
 		}
 		catch (IOException ioException) {
 			System.out.println("Unable to execute Jenkins script");
@@ -1390,7 +1404,7 @@ public class JenkinsResultsParserUtil {
 	public static Properties getBuildProperties(boolean checkCache)
 		throws IOException {
 
-		Properties properties = new Properties();
+		Properties properties = new SecureProperties();
 
 		synchronized (_buildProperties) {
 			if (checkCache && !_buildProperties.isEmpty()) {
@@ -1437,6 +1451,12 @@ public class JenkinsResultsParserUtil {
 		throws IOException {
 
 		return getBuildProperty(true, propertyName);
+	}
+
+	public static String getBuildProperty(String propertyName, String... opts)
+		throws IOException {
+
+		return getProperty(getBuildProperties(true), propertyName, opts);
 	}
 
 	public static List<String> getBuildPropertyAsList(
@@ -2608,6 +2628,18 @@ public class JenkinsResultsParserUtil {
 		return localURL + localURLQueryString;
 	}
 
+	public static JenkinsMaster getMostAvailableJenkinsMaster(
+		String baseInvocationURL, String blacklist, int invokedBatchSize,
+		int minimumRAM, int maximumSlavesPerHost) {
+
+		String mostAvailableMasterURL = getMostAvailableMasterURL(
+			baseInvocationURL, blacklist, invokedBatchSize, minimumRAM,
+			maximumSlavesPerHost);
+
+		return JenkinsMaster.getInstance(
+			mostAvailableMasterURL.replaceAll("http://(.+)", "$1"));
+	}
+
 	public static String getMostAvailableMasterURL(
 		String baseInvocationURL, int invokedBatchSize) {
 
@@ -3265,6 +3297,89 @@ public class JenkinsResultsParserUtil {
 		catch (IOException ioException) {
 			throw new RuntimeException(ioException);
 		}
+	}
+
+	public static JSONObject invokeJenkinsBuild(
+		JenkinsMaster jenkinsMaster, String jenkinsJobName,
+		Map<String, String> buildParameters) {
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("import org.jvnet.jenkins.plugins.nodelabelparameter.");
+		sb.append("LabelParameterDefinition;\n");
+
+		sb.append("import org.jvnet.jenkins.plugins.nodelabelparameter.");
+		sb.append("LabelParameterValue;\n");
+
+		sb.append("Map<String, String> parameters = new HashMap<>();\n");
+
+		for (Map.Entry<String, String> buildParameter :
+				buildParameters.entrySet()) {
+
+			sb.append("parameters.put(\"");
+			sb.append(buildParameter.getKey());
+			sb.append("\", \"");
+			sb.append(buildParameter.getValue());
+			sb.append("\");\n");
+		}
+
+		sb.append("Map<String, TopLevelItem> topLevelItems = ");
+		sb.append("Jenkins.instance.getItemMap();\n");
+
+		sb.append("TopLevelItem topLevelItem = topLevelItems.get(\"");
+		sb.append(jenkinsJobName);
+		sb.append("\");\n");
+
+		sb.append(
+			"List<ParameterValue> parameterValues = new ArrayList<>();\n");
+
+		sb.append("JobProperty jobProperty = topLevelItem.getProperty(");
+		sb.append("\"hudson.model.ParametersDefinitionProperty\");\n");
+
+		sb.append("for (ParameterDefinition parameterDefinition : ");
+		sb.append("jobProperty.getParameterDefinitions()) {\n");
+
+		sb.append("String parameterName = parameterDefinition.getName();\n;");
+
+		sb.append("String parameterValue = parameters.get(parameterName);\n;");
+
+		sb.append(
+			"if ((parameterValue == null) || parameterValue.isEmpty()) {\n;");
+		sb.append("parameterValue = parameterDefinition.defaultValue;\n");
+		sb.append("}\n");
+
+		sb.append("if (parameterDefinition instanceof ");
+		sb.append("StringParameterDefinition) {\n");
+
+		sb.append("parameterValues.add(");
+		sb.append(
+			"new StringParameterValue(parameterName, parameterValue));\n");
+
+		sb.append("}\n");
+
+		sb.append("else if (parameterDefinition instanceof ");
+		sb.append("LabelParameterDefinition) {\n");
+
+		sb.append("parameterValues.add(");
+		sb.append("new LabelParameterValue(parameterName, parameterValue));\n");
+
+		sb.append("}\n");
+
+		sb.append("}\n");
+
+		sb.append("def waitingItem = Jenkins.instance.queue.schedule(");
+		sb.append("topLevelItem, 0, new ParametersAction(parameterValues));\n");
+
+		sb.append("def jsonBuilder = new groovy.json.JsonBuilder()\n");
+
+		sb.append("jsonBuilder queueId: waitingItem.getId()\n");
+
+		sb.append("println(jsonBuilder);");
+
+		String response = executeJenkinsScript(
+			jenkinsMaster.getName(), sb.toString(), true);
+
+		return new JSONObject(response);
 	}
 
 	public static boolean isCINode() {
@@ -4422,6 +4537,14 @@ public class JenkinsResultsParserUtil {
 						}
 					}
 
+					if (url.contains("/o/oauth2/token")) {
+						httpURLConnection.setRequestProperty(
+							"accept", "application/json");
+						httpURLConnection.setRequestProperty(
+							"Content-Type",
+							"application/x-www-form-urlencoded");
+					}
+
 					if (postContent != null) {
 						if (httpRequestMethod == null) {
 							httpURLConnection.setRequestMethod("POST");
@@ -4790,6 +4913,17 @@ public class JenkinsResultsParserUtil {
 			url, checkCache, _RETRIES_SIZE_MAX_DEFAULT, httpRequestMethod,
 			postContent, _SECONDS_RETRY_PERIOD_DEFAULT, _MILLIS_TIMEOUT_DEFAULT,
 			null, false);
+	}
+
+	public static String toString(
+			String url, boolean checkCache, HttpRequestMethod httpRequestMethod,
+			String postContent, HTTPAuthorization httpAuthorizationHeader)
+		throws IOException {
+
+		return toString(
+			url, checkCache, _RETRIES_SIZE_MAX_DEFAULT, httpRequestMethod,
+			postContent, _SECONDS_RETRY_PERIOD_DEFAULT, _MILLIS_TIMEOUT_DEFAULT,
+			httpAuthorizationHeader, false);
 	}
 
 	public static String toString(String url, boolean checkCache, int timeout)
@@ -6195,6 +6329,8 @@ public class JenkinsResultsParserUtil {
 	private static Long _currentTimeMillisDelta;
 	private static final Pattern _dockerFilePattern = Pattern.compile(
 		".*FROM (?<dockerImageName>[^\\s]+)( AS builder)?\\n[\\s\\S]*");
+	private static final List<String> _forbiddenRedactTokens = Arrays.asList(
+		"test");
 	private static JSONArray _gitDirectoriesJSONArray;
 	private static final DateFormat _gitHubDateFormat = new SimpleDateFormat(
 		"yyyy-MM-dd'T'HH:mm:ss");

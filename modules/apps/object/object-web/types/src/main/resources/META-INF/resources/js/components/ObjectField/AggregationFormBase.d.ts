@@ -6,7 +6,7 @@
 /// <reference types="react" />
 
 import {ObjectFieldErrors} from './ObjectFieldFormBase';
-interface AggregationSourcePropertyProps {
+interface AggregationFormBaseProps {
 	creationLanguageId2: Liferay.Language.Locale;
 	disabled?: boolean;
 	editingObjectField?: boolean;
@@ -14,10 +14,12 @@ interface AggregationSourcePropertyProps {
 	objectDefinitionExternalReferenceCode: string;
 	objectFieldSettings: ObjectFieldSetting[];
 	onAggregationFilterChange?: (aggregationFilterArray: []) => void;
-	onRelationshipChange?: (
+	onObjectRelationshipChange?: (
 		objectDefinitionExternalReferenceCode2: string
 	) => void;
+	onSubmit?: (values?: Partial<ObjectField>) => void;
 	setValues: (values: Partial<ObjectField>) => void;
+	values: Partial<ObjectField>;
 }
 export declare function AggregationFormBase({
 	creationLanguageId2,
@@ -25,9 +27,11 @@ export declare function AggregationFormBase({
 	errors,
 	editingObjectField,
 	onAggregationFilterChange,
-	onRelationshipChange,
+	onObjectRelationshipChange,
+	onSubmit,
 	objectDefinitionExternalReferenceCode,
 	objectFieldSettings,
 	setValues,
-}: AggregationSourcePropertyProps): JSX.Element;
+	values,
+}: AggregationFormBaseProps): JSX.Element;
 export {};

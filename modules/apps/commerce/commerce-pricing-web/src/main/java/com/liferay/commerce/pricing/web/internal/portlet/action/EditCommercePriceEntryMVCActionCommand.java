@@ -161,6 +161,10 @@ public class EditCommercePriceEntryMVCActionCommand
 			long commercePriceEntryId, ActionRequest actionRequest)
 		throws Exception {
 
+		CommercePriceEntry commercePriceEntry =
+			_commercePriceEntryService.getCommercePriceEntry(
+				commercePriceEntryId);
+
 		boolean bulkPricing = ParamUtil.getBoolean(
 			actionRequest, "bulkPricing");
 		boolean overrideDiscount = ParamUtil.getBoolean(
@@ -214,10 +218,6 @@ public class EditCommercePriceEntryMVCActionCommand
 			actionRequest, "price", BigDecimal.ZERO);
 		boolean priceOnApplication = ParamUtil.getBoolean(
 			actionRequest, "priceOnApplication");
-
-		CommercePriceEntry commercePriceEntry =
-			_commercePriceEntryService.getCommercePriceEntry(
-				commercePriceEntryId);
 
 		if (priceOnApplication) {
 			bulkPricing = commercePriceEntry.isBulkPricing();

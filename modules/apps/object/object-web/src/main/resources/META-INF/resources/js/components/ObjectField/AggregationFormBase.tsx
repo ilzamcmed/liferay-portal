@@ -15,7 +15,7 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {normalizeFieldSettings} from '../../utils/fieldSettings';
 import {ObjectFieldErrors} from './ObjectFieldFormBase';
 
-interface AggregationSourcePropertyProps {
+interface AggregationFormBaseProps {
 	creationLanguageId2: Liferay.Language.Locale;
 	disabled?: boolean;
 	editingObjectField?: boolean;
@@ -23,10 +23,12 @@ interface AggregationSourcePropertyProps {
 	objectDefinitionExternalReferenceCode: string;
 	objectFieldSettings: ObjectFieldSetting[];
 	onAggregationFilterChange?: (aggregationFilterArray: []) => void;
-	onRelationshipChange?: (
+	onObjectRelationshipChange?: (
 		objectDefinitionExternalReferenceCode2: string
 	) => void;
+	onSubmit?: (values?: Partial<ObjectField>) => void;
 	setValues: (values: Partial<ObjectField>) => void;
+	values: Partial<ObjectField>;
 }
 
 type TObjectRelationship = {
@@ -64,11 +66,13 @@ export function AggregationFormBase({
 	errors,
 	editingObjectField,
 	onAggregationFilterChange,
-	onRelationshipChange,
+	onObjectRelationshipChange,
+	onSubmit,
 	objectDefinitionExternalReferenceCode,
 	objectFieldSettings = [],
 	setValues,
-}: AggregationSourcePropertyProps) {
+	values,
+}: AggregationFormBaseProps) {
 	const [relationshipsQuery, setRelationshipsQuery] = useState<string>('');
 	const [relationshipFieldsQuery, setRelationshipFieldsQuery] = useState<
 		string
@@ -158,8 +162,8 @@ export function AggregationFormBase({
 							relatedField.name === settings.objectFieldName
 					) as ObjectField;
 
-					if (onRelationshipChange) {
-						onRelationshipChange(
+					if (onObjectRelationshipChange) {
+						onObjectRelationshipChange(
 							currentRelatedObjectRelationship.objectDefinitionExternalReferenceCode2
 						);
 					}
@@ -200,7 +204,7 @@ export function AggregationFormBase({
 		editingObjectField,
 		objectRelationships,
 		objectFieldSettings,
-		onRelationshipChange,
+		onObjectRelationshipChange,
 	]);
 
 	const handleChangeRelatedObjectRelationship = async (
@@ -253,10 +257,17 @@ export function AggregationFormBase({
 			objectFieldSettings: newObjectFieldSettings,
 		});
 
-		if (onRelationshipChange) {
-			onRelationshipChange(
+		if (onObjectRelationshipChange) {
+			onObjectRelationshipChange(
 				objectRelationship.objectDefinitionExternalReferenceCode2
 			);
+		}
+
+		if (onSubmit) {
+			onSubmit({
+				...values,
+				objectFieldSettings: newObjectFieldSettings,
+			});
 		}
 	};
 
@@ -345,6 +356,7 @@ export function AggregationFormBase({
 					'no-relationships-were-found'
 				)}
 				error={errors.objectRelationshipName}
+				id="objectFieldAggregationRelationship"
 				items={filteredObjectRelationships ?? []}
 				label={Liferay.Language.get('relationship')}
 				onActive={(item) =>
@@ -379,6 +391,13 @@ export function AggregationFormBase({
 				disabled={disabled}
 				error={errors.function}
 				label={Liferay.Language.get('function')}
+				onBlur={(event) => {
+					event.stopPropagation();
+
+					if (onSubmit) {
+						onSubmit();
+					}
+				}}
 				onChange={handleAggregationFunctionChange}
 				options={aggregationFunctions}
 				required
@@ -391,11 +410,19 @@ export function AggregationFormBase({
 						'no-fields-were-found'
 					)}
 					error={errors.objectFieldName}
+					id="objectFieldAggregationField"
 					items={filteredObjectRelationshipFields ?? []}
 					label={Liferay.Language.get('field')}
 					onActive={(item) =>
 						item.name === selectedSummarizeField?.name
 					}
+					onBlur={(event) => {
+						event.stopPropagation();
+
+						if (onSubmit) {
+							onSubmit();
+						}
+					}}
 					onChangeQuery={setRelationshipFieldsQuery}
 					onSelectItem={(item) => {
 						handleSummarizeFieldChange(item);

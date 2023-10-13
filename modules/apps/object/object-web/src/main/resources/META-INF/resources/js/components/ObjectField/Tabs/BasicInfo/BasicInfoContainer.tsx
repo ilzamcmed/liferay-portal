@@ -28,6 +28,7 @@ interface BasicInfoContainerProps {
 	objectDefinitionName: string;
 	objectFieldTypes: ObjectFieldType[];
 	objectRelationshipId: number;
+	onSubmit?: () => void;
 	readOnly: boolean;
 	setAggregationFilters: (values: AggregationFilters[]) => void;
 	setObjectDefinitionExternalReferenceCode2: (value: string) => void;
@@ -46,6 +47,7 @@ export function BasicInfoContainer({
 	objectDefinitionName,
 	objectFieldTypes,
 	objectRelationshipId,
+	onSubmit,
 	readOnly,
 	setAggregationFilters,
 	setObjectDefinitionExternalReferenceCode2,
@@ -78,6 +80,13 @@ export function BasicInfoContainer({
 				disabled={readOnly}
 				error={errors.label}
 				label={Liferay.Language.get('label')}
+				onBlur={(event) => {
+					event.stopPropagation();
+
+					if (onSubmit) {
+						onSubmit();
+					}
+				}}
 				onChange={(label) => setValues({label})}
 				required
 				translations={values.label as LocalizedValue<string>}
@@ -100,7 +109,10 @@ export function BasicInfoContainer({
 				objectFieldTypes={objectFieldTypes}
 				objectRelationshipId={objectRelationshipId}
 				onAggregationFilterChange={setAggregationFilters}
-				onRelationshipChange={setObjectDefinitionExternalReferenceCode2}
+				onObjectRelationshipChange={
+					setObjectDefinitionExternalReferenceCode2
+				}
+				onSubmit={onSubmit}
 				setValues={setValues}
 			>
 				{values.businessType === 'Attachment' && (
@@ -110,6 +122,7 @@ export function BasicInfoContainer({
 							values.objectFieldSettings as ObjectFieldSetting[]
 						}
 						onSettingsChange={handleSettingsChange}
+						onSubmit={onSubmit}
 					/>
 				)}
 
@@ -124,6 +137,7 @@ export function BasicInfoContainer({
 							values.objectFieldSettings as ObjectFieldSetting[]
 						}
 						onSettingsChange={handleSettingsChange}
+						onSubmit={onSubmit}
 						setValues={setValues}
 					/>
 				)}

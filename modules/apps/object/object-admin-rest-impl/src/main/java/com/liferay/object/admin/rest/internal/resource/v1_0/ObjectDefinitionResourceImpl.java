@@ -34,7 +34,6 @@ import com.liferay.object.constants.ObjectConstants;
 import com.liferay.object.constants.ObjectFieldConstants;
 import com.liferay.object.constants.ObjectRelationshipConstants;
 import com.liferay.object.definition.util.ObjectDefinitionUtil;
-import com.liferay.object.exception.ObjectDefinitionEnableLocalizationException;
 import com.liferay.object.exception.ObjectDefinitionStorageTypeException;
 import com.liferay.object.model.ObjectActionModel;
 import com.liferay.object.model.ObjectFieldModel;
@@ -235,20 +234,8 @@ public class ObjectDefinitionResourceImpl
 			ObjectDefinition objectDefinition)
 		throws Exception {
 
-		if (Validator.isNotNull(objectDefinition.getEnableLocalization()) &&
-			!FeatureFlagManagerUtil.isEnabled("LPS-172017")) {
-
-			throw new ObjectDefinitionEnableLocalizationException();
-		}
-
 		if (Validator.isNotNull(objectDefinition.getEnableObjectEntryDraft()) &&
 			!FeatureFlagManagerUtil.isEnabled("LPS-181663")) {
-
-			throw new UnsupportedOperationException();
-		}
-
-		if (Validator.isNotNull(objectDefinition.getModifiable()) &&
-			!FeatureFlagManagerUtil.isEnabled("LPS-167253")) {
 
 			throw new UnsupportedOperationException();
 		}
@@ -271,9 +258,7 @@ public class ObjectDefinitionResourceImpl
 		com.liferay.object.model.ObjectDefinition
 			serviceBuilderObjectDefinition;
 
-		if (GetterUtil.getBoolean(objectDefinition.getSystem()) &&
-			FeatureFlagManagerUtil.isEnabled("LPS-167253")) {
-
+		if (GetterUtil.getBoolean(objectDefinition.getSystem())) {
 			serviceBuilderObjectDefinition =
 				_objectDefinitionService.addSystemObjectDefinition(
 					objectDefinition.getExternalReferenceCode(),
@@ -402,8 +387,7 @@ public class ObjectDefinitionResourceImpl
 
 		Status status = objectDefinition.getStatus();
 
-		if (FeatureFlagManagerUtil.isEnabled("LPS-167253") &&
-			(status != null) &&
+		if ((status != null) &&
 			(status.getCode() == WorkflowConstants.STATUS_APPROVED)) {
 
 			postObjectDefinitionPublish(
@@ -429,9 +413,7 @@ public class ObjectDefinitionResourceImpl
 				_objectDefinitionService.getObjectDefinition(
 					objectDefinitionId);
 
-		if (GetterUtil.getBoolean(serviceBuilderObjectDefinition.getSystem()) &&
-			FeatureFlagManagerUtil.isEnabled("LPS-167253")) {
-
+		if (GetterUtil.getBoolean(serviceBuilderObjectDefinition.getSystem())) {
 			return _toObjectDefinition(
 				_objectDefinitionService.publishSystemObjectDefinition(
 					objectDefinitionId));
@@ -451,12 +433,6 @@ public class ObjectDefinitionResourceImpl
 
 		if (Validator.isNotNull(objectDefinition.getEnableObjectEntryDraft()) &&
 			!FeatureFlagManagerUtil.isEnabled("LPS-181663")) {
-
-			throw new UnsupportedOperationException();
-		}
-
-		if (Validator.isNotNull(objectDefinition.getModifiable()) &&
-			!FeatureFlagManagerUtil.isEnabled("LPS-167253")) {
 
 			throw new UnsupportedOperationException();
 		}
@@ -1130,17 +1106,7 @@ public class ObjectDefinitionResourceImpl
 				enableCategorization =
 					objectDefinition.getEnableCategorization();
 				enableComments = objectDefinition.getEnableComments();
-
-				if (FeatureFlagManagerUtil.isEnabled("LPS-172017")) {
-					enableLocalization =
-						objectDefinition.getEnableLocalization();
-				}
-
-				if (FeatureFlagManagerUtil.isEnabled("LPS-181663")) {
-					enableObjectEntryDraft =
-						objectDefinition.getEnableObjectEntryDraft();
-				}
-
+				enableLocalization = objectDefinition.getEnableLocalization();
 				enableObjectEntryHistory =
 					objectDefinition.getEnableObjectEntryHistory();
 				externalReferenceCode =
@@ -1148,11 +1114,7 @@ public class ObjectDefinitionResourceImpl
 				id = objectDefinition.getObjectDefinitionId();
 				label = LocalizedMapUtil.getLanguageIdMap(
 					objectDefinition.getLabelMap());
-
-				if (FeatureFlagManagerUtil.isEnabled("LPS-167253")) {
-					modifiable = objectDefinition.getModifiable();
-				}
-
+				modifiable = objectDefinition.getModifiable();
 				name = objectDefinition.getShortName();
 				objectActions = transformToArray(
 					_objectActionLocalService.getObjectActions(
@@ -1174,12 +1136,6 @@ public class ObjectDefinitionResourceImpl
 							null),
 						objectField),
 					ObjectField.class);
-
-				if (FeatureFlagManagerUtil.isEnabled("LPS-148856")) {
-					objectFolderExternalReferenceCode =
-						objectDefinition.getObjectFolderExternalReferenceCode();
-				}
-
 				objectLayouts = transformToArray(
 					_objectLayoutLocalService.getObjectLayouts(
 						objectDefinition.getObjectDefinitionId()),
@@ -1239,11 +1195,6 @@ public class ObjectDefinitionResourceImpl
 								objectDefinition.getStatus()));
 					}
 				};
-
-				if (FeatureFlagManagerUtil.isEnabled("LPS-135430")) {
-					storageType = objectDefinition.getStorageType();
-				}
-
 				system = objectDefinition.isSystem();
 
 				setAccountEntryRestrictedObjectFieldName(
@@ -1260,26 +1211,51 @@ public class ObjectDefinitionResourceImpl
 
 						return serviceBuilderObjectField.getName();
 					});
+				setEnableObjectEntryDraft(
+					() -> {
+						if (!FeatureFlagManagerUtil.isEnabled("LPS-181663")) {
+							return null;
+						}
 
-				if (FeatureFlagManagerUtil.isEnabled("LPS-187142")) {
-					setRootObjectDefinitionExternalReferenceCode(
-						() -> {
-							com.liferay.object.model.ObjectDefinition
-								serviceBuilderObjectDefinition =
-									_objectDefinitionLocalService.
-										fetchObjectDefinition(
-											objectDefinition.
-												getRootObjectDefinitionId());
+						return objectDefinition.getEnableObjectEntryDraft();
+					});
+				setObjectFolderExternalReferenceCode(
+					() -> {
+						if (!FeatureFlagManagerUtil.isEnabled("LPS-148856")) {
+							return null;
+						}
 
-							if (serviceBuilderObjectDefinition == null) {
-								return null;
-							}
+						return objectDefinition.
+							getObjectFolderExternalReferenceCode();
+					});
+				setRootObjectDefinitionExternalReferenceCode(
+					() -> {
+						if (!FeatureFlagManagerUtil.isEnabled("LPS-187142")) {
+							return null;
+						}
 
-							return serviceBuilderObjectDefinition.
-								getExternalReferenceCode();
-						});
-				}
+						com.liferay.object.model.ObjectDefinition
+							serviceBuilderObjectDefinition =
+								_objectDefinitionLocalService.
+									fetchObjectDefinition(
+										objectDefinition.
+											getRootObjectDefinitionId());
 
+						if (serviceBuilderObjectDefinition == null) {
+							return null;
+						}
+
+						return serviceBuilderObjectDefinition.
+							getExternalReferenceCode();
+					});
+				setStorageType(
+					() -> {
+						if (!FeatureFlagManagerUtil.isEnabled("LPS-135430")) {
+							return null;
+						}
+
+						return objectDefinition.getStorageType();
+					});
 				setTitleObjectFieldName(
 					() -> {
 						com.liferay.object.model.ObjectField

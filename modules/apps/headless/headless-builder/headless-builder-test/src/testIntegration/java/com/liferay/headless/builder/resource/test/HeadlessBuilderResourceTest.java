@@ -94,7 +94,7 @@ import org.skyscreamer.jsonassert.JSONCompareMode;
  * @author Luis Miguel Barcos
  */
 @DataGuard(scope = DataGuard.Scope.METHOD)
-@FeatureFlags({"LPS-167253", "LPS-178642"})
+@FeatureFlags("LPS-178642")
 public class HeadlessBuilderResourceTest extends BaseTestCase {
 
 	@ClassRule
@@ -927,6 +927,79 @@ public class HeadlessBuilderResourceTest extends BaseTestCase {
 		Assert.assertEquals(
 			200,
 			HTTPTestUtil.invokeToHttpCode(null, endpoint2, Http.Method.GET));
+	}
+
+	@Test
+	public void testGetWithIndirectlyRelatedProperty() throws Exception {
+		JSONObject apiApplicationJSONObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				"applicationStatus", "published"
+			).put(
+				"baseURL", StringUtil.toLowerCase(RandomTestUtil.randomString())
+			).put(
+				"title", RandomTestUtil.randomString()
+			).toString(),
+			"headless-builder/applications", Http.Method.POST);
+
+		JSONObject apiEndpointJSONObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				"description", RandomTestUtil.randomString()
+			).put(
+				"httpMethod", "get"
+			).put(
+				"name", RandomTestUtil.randomString()
+			).put(
+				"name", RandomTestUtil.randomString()
+			).put(
+				"path", StringPool.FORWARD_SLASH + RandomTestUtil.randomString()
+			).put(
+				"r_apiApplicationToAPIEndpoints_c_apiApplicationId",
+				apiApplicationJSONObject.getLong("id")
+			).put(
+				"responseAPISchemaToAPIEndpoints",
+				JSONUtil.put(
+					"apiSchemaToAPIProperties",
+					JSONUtil.putAll(
+						JSONUtil.put(
+							"description", RandomTestUtil.randomString()
+						).put(
+							"name", RandomTestUtil.randomString()
+						).put(
+							"objectFieldERC", "NAME"
+						),
+						JSONUtil.put(
+							"description", RandomTestUtil.randomString()
+						).put(
+							"name", RandomTestUtil.randomString()
+						).put(
+							"objectFieldERC", "NAME"
+						).put(
+							"objectRelationshipNames",
+							"apiApplicationToAPIEndpoints,apiApplicationToAPI" +
+								"Schemas"
+						))
+				).put(
+					"description", RandomTestUtil.randomString()
+				).put(
+					"mainObjectDefinitionERC", "L_API_ENDPOINT"
+				).put(
+					"name", RandomTestUtil.randomString()
+				).put(
+					"r_apiApplicationToAPISchemas_c_apiApplicationId",
+					apiApplicationJSONObject.getLong("id")
+				)
+			).put(
+				"retrieveType", "collection"
+			).put(
+				"scope", "company"
+			).toString(),
+			"headless-builder/endpoints", Http.Method.POST);
+
+		assertSuccessfulHttpCode(
+			null,
+			"c/" + apiApplicationJSONObject.getString("baseURL") +
+				apiEndpointJSONObject.getString("path"),
+			Http.Method.GET);
 	}
 
 	@Test

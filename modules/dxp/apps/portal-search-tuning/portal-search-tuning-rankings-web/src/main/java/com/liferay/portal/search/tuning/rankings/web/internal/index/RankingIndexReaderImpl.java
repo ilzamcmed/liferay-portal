@@ -6,6 +6,7 @@
 package com.liferay.portal.search.tuning.rankings.web.internal.index;
 
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.search.document.Document;
 import com.liferay.portal.search.engine.adapter.SearchEngineAdapter;
@@ -104,65 +105,29 @@ public class RankingIndexReaderImpl implements RankingIndexReader {
 		return null;
 	}
 
-	private BooleanQuery _getEmptyScopeBooleanQuery() {
-		BooleanQuery booleanQuery = _queries.booleanQuery();
-
-		BooleanQuery groupBooleanQuery1 = _queries.booleanQuery();
-
-		groupBooleanQuery1.addMustNotQueryClauses(
-			_queries.exists(RankingFields.GROUP_EXTERNAL_REFERENCE_CODE));
-
-		BooleanQuery groupBooleanQuery2 = _queries.booleanQuery();
-
-		groupBooleanQuery2.addShouldQueryClauses(
-			groupBooleanQuery1,
-			_queries.term(
-				RankingFields.GROUP_EXTERNAL_REFERENCE_CODE, StringPool.BLANK));
-
-		BooleanQuery sxpBlueprintBooleanQuery1 = _queries.booleanQuery();
-
-		sxpBlueprintBooleanQuery1.addMustNotQueryClauses(
-			_queries.exists(
-				RankingFields.SXP_BLUEPRINT_EXTERNAL_REFERENCE_CODE));
-
-		BooleanQuery sxpBlueprintBooleanQuery2 = _queries.booleanQuery();
-
-		sxpBlueprintBooleanQuery2.addShouldQueryClauses(
-			sxpBlueprintBooleanQuery1,
-			_queries.term(
-				RankingFields.SXP_BLUEPRINT_EXTERNAL_REFERENCE_CODE,
-				StringPool.BLANK));
-
-		booleanQuery.addMustQueryClauses(
-			groupBooleanQuery2, sxpBlueprintBooleanQuery2);
-
-		return booleanQuery;
-	}
-
 	private BooleanQuery _getQuery(
 		String groupExternalReferenceCode, String queryString,
 		String sxpBlueprintExternalReferenceCode) {
 
 		BooleanQuery booleanQuery = _queries.booleanQuery();
 
-		BooleanQuery scopeBooleanQuery = _queries.booleanQuery();
+		if (!Validator.isBlank(sxpBlueprintExternalReferenceCode) &&
+			FeatureFlagManagerUtil.isEnabled("LPS-159650")) {
 
-		scopeBooleanQuery.addShouldQueryClauses(_getEmptyScopeBooleanQuery());
-
-		if (!Validator.isBlank(sxpBlueprintExternalReferenceCode)) {
-			scopeBooleanQuery.addShouldQueryClauses(
+			booleanQuery.addFilterQueryClauses(
 				_queries.term(
 					RankingFields.SXP_BLUEPRINT_EXTERNAL_REFERENCE_CODE,
 					sxpBlueprintExternalReferenceCode));
 		}
-		else if (!Validator.isBlank(groupExternalReferenceCode)) {
-			scopeBooleanQuery.addShouldQueryClauses(
+		else if (!Validator.isBlank(groupExternalReferenceCode) &&
+				 FeatureFlagManagerUtil.isEnabled("LPS-157988")) {
+
+			booleanQuery.addFilterQueryClauses(
 				_queries.term(
 					RankingFields.GROUP_EXTERNAL_REFERENCE_CODE,
 					groupExternalReferenceCode));
 		}
 
-		booleanQuery.addFilterQueryClauses(scopeBooleanQuery);
 		booleanQuery.addFilterQueryClauses(
 			_queries.term(RankingFields.QUERY_STRINGS_KEYWORD, queryString));
 		booleanQuery.addMustNotQueryClauses(

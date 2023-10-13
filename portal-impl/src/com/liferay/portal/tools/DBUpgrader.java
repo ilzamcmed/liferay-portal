@@ -17,6 +17,7 @@ import com.liferay.portal.kernel.cache.PortalCacheHelperUtil;
 import com.liferay.portal.kernel.cache.PortalCacheManagerNames;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
+import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.dependency.manager.DependencyManagerSyncUtil;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
@@ -130,7 +131,19 @@ public class DBUpgrader {
 				PropsUtil.get(PropsKeys.UPGRADE_DATABASE_AUTO_RUN));
 		}
 
-		return _UPGRADE_DATABASE_AUTO_RUN;
+		if (_upgradeDatabaseAutoRun != null) {
+			return _upgradeDatabaseAutoRun;
+		}
+
+		if (DBManagerUtil.getDBType() == DBType.HYPERSONIC) {
+			_upgradeDatabaseAutoRun = false;
+		}
+		else {
+			_upgradeDatabaseAutoRun = GetterUtil.getBoolean(
+				PropsUtil.get(PropsKeys.UPGRADE_DATABASE_AUTO_RUN));
+		}
+
+		return _upgradeDatabaseAutoRun;
 	}
 
 	public static void main(String[] args) {
@@ -411,8 +424,6 @@ public class DBUpgrader {
 		db.runSQL("update CompanyInfo set key_ = null");
 	}
 
-	private static final boolean _UPGRADE_DATABASE_AUTO_RUN;
-
 	private static final Version _VERSION_7010 = new Version(0, 0, 6);
 
 	private static final Log _log = LogFactoryUtil.getLog(DBUpgrader.class);
@@ -422,15 +433,6 @@ public class DBUpgrader {
 		_appenderServiceReference;
 	private static volatile StopWatch _stopWatch;
 	private static volatile boolean _upgradeClient;
-
-	static {
-		if (PropsValues.JDBC_DEFAULT_DRIVER_CLASS_NAME.contains("hsql")) {
-			_UPGRADE_DATABASE_AUTO_RUN = false;
-		}
-		else {
-			_UPGRADE_DATABASE_AUTO_RUN = GetterUtil.getBoolean(
-				PropsUtil.get(PropsKeys.UPGRADE_DATABASE_AUTO_RUN));
-		}
-	}
+	private static Boolean _upgradeDatabaseAutoRun;
 
 }

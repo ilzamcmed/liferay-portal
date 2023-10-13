@@ -18,10 +18,6 @@ birthdayCalendar.set(Calendar.MONTH, Calendar.JANUARY);
 birthdayCalendar.set(Calendar.DATE, 1);
 birthdayCalendar.set(Calendar.YEAR, 1970);
 
-if (Validator.isNotNull(redirect)) {
-	portletDisplay.setURLBack(redirect);
-}
-
 renderResponse.setTitle(LanguageUtil.get(request, "create-account"));
 %>
 

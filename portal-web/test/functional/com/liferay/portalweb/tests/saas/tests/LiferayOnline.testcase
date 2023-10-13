@@ -108,7 +108,7 @@ definition {
 
 		task ("Assert the default Welcome Page is present") {
 			ContentPages.viewFragmentText(
-				fragmentName = "heading",
+				fragmentName = "paragraph",
 				id = "element-text",
 				text = "Welcome to Liferay");
 		}
@@ -375,7 +375,7 @@ definition {
 		task ("Search for Careers in Search Bar to get results") {
 			TeamExtranet.searchEmbedded(searchTerm = "careers");
 
-			SearchResultPortlet.viewSearchResults(
+			SearchResults.viewSearchResults(
 				searchAssetTitle = "Careers",
 				searchAssetType = "Page");
 		}

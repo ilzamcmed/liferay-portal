@@ -32,7 +32,7 @@
 </tr>
 <tr>
 	<td>APPLICATION_STATUS</td>
-	<td>//div[@class='table-list-title' and contains(.,'${key_title}')]/../..//div[contains(.,'${key_status}')]</td>
+	<td>//div[contains(@class,'table-list-title') and contains(.,'${key_title}')]/../..//div[contains(.,'${key_status}')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -87,12 +87,17 @@
 </tr>
 <tr>
 	<td>DROPDOWN_MENU</td>
-	<td>//div[@class='table-list-title' and contains(.,'${key_title}')]/../..//button[contains(.,'Action')]</td>
+	<td>//div[contains(@class,'table-list-title') and contains(.,'${key_title}')]/../..//button[contains(.,'Action')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>EDIT_BUTTON</td>
 	<td>//div[@class='dropdown-menu show']//button[contains(text(),'Edit')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ENTER_NAME</td>
+	<td>//input[(@placeholder='Enter name.')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -126,6 +131,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>SELECT_AN_OBJECT_DEFINITION</td>
+	<td>//div[contains(@class,'dropdown-toggle')]//button[contains(text(),'Select an Object Definition') or contains(text(),'${objectDefinitionName}')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>STATUS_IN_FILTER</td>
 	<td>//div[contains(@class,'dropdown-menu show')]//button[contains(text(),'Status')]</td>
 	<td></td>
@@ -137,7 +147,7 @@
 </tr>
 <tr>
 	<td>TABLE_LIST</td>
-	<td>xpath=(//div[(@class='table-list-title')])[${index}]</td>
+	<td>xpath=(//div[contains(@class,'table-list-title')])[${index}]</td>
 	<td></td>
 </tr>
 <tr>

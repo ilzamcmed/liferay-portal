@@ -5,7 +5,7 @@
 
 import ClayLayout from '@clayui/layout';
 import ClayTabs from '@clayui/tabs';
-import {fetch, openToast} from 'frontend-js-web';
+import {openToast} from 'frontend-js-web';
 import {PropTypes} from 'prop-types';
 import React, {Component} from 'react';
 
@@ -32,10 +32,10 @@ class ResultRankingsForm extends Component {
 	static contextType = ThemeContext;
 
 	static propTypes = {
-		cancelUrl: PropTypes.string.isRequired,
-		fetchDocumentsHiddenUrl: PropTypes.string.isRequired,
-		fetchDocumentsSearchUrl: PropTypes.string.isRequired,
-		fetchDocumentsVisibleUrl: PropTypes.string.isRequired,
+		cancelURL: PropTypes.string.isRequired,
+		fetchDocumentsHiddenURL: PropTypes.string.isRequired,
+		fetchDocumentsSearchURL: PropTypes.string.isRequired,
+		fetchDocumentsVisibleURL: PropTypes.string.isRequired,
 		formName: PropTypes.string.isRequired,
 		initialAliases: PropTypes.arrayOf(String),
 		initialGroupExternalReferenceCode: PropTypes.string,
@@ -43,7 +43,7 @@ class ResultRankingsForm extends Component {
 		initialSXPBlueprintExternalReferenceCode: PropTypes.string,
 		resultsRankingUid: PropTypes.string,
 		searchQuery: PropTypes.string.isRequired,
-		validateFormUrl: PropTypes.string.isRequired,
+		validateFormURL: PropTypes.string.isRequired,
 	};
 
 	static defaultProps = {
@@ -295,45 +295,31 @@ class ResultRankingsForm extends Component {
 		) {
 			const scopeInfo = this.props.initialGroupExternalReferenceCode
 				? {
-						fetchItemByIdUrl:
-							'/o/headless-admin-user/v1.0/sites/by-external-reference-code/',
+						fetchItemByIdUrl: this.props
+							.fetchSiteByExternalReferenceCodeURL,
 						label: 'descriptiveName',
 						value: this.props.initialGroupExternalReferenceCode,
 				  }
 				: {
-						fetchItemByIdUrl:
-							'/o/search-experiences-rest/v1.0/sxp-blueprints/by-external-reference-code/',
+						fetchItemByIdUrl: `${
+							window.location.origin
+						}${Liferay.ThemeDisplay.getPathContext()}/o/search-experiences-rest/v1.0/sxp-blueprints/by-external-reference-code/${
+							this.props.initialSXPBlueprintExternalReferenceCode
+						}`,
 						label: 'title',
 						value: this.props
 							.initialSXPBlueprintExternalReferenceCode,
 				  };
 
-			fetch(
-				`${
-					window.location.origin
-				}${Liferay.ThemeDisplay.getPathContext()}${
-					scopeInfo.fetchItemByIdUrl
-				}${scopeInfo.value}`,
-				{
-					credentials: 'include',
-					headers: new Headers({
-						'Accept-Language': Liferay.ThemeDisplay.getBCP47LanguageId(),
-						'x-csrf-token': Liferay.authToken,
-					}),
-					method: 'GET',
-				}
-			)
+			fetchResponse(scopeInfo.fetchItemByIdUrl, {
+				[`${this.context.namespace}externalReferenceCode`]: scopeInfo.value,
+			})
 				.then((response) => {
-					if (response.ok) {
-						return response.json();
-					}
-
-					throw new Error();
-				})
-				.then((item) => {
 					this.setState(() => ({
 						scopeDisplayName:
-							item[scopeInfo.label] || scopeInfo.value,
+							response.status !== 'NOT_FOUND'
+								? response[scopeInfo.label]
+								: scopeInfo.value,
 					}));
 				})
 				.catch(() => {
@@ -356,7 +342,7 @@ class ResultRankingsForm extends Component {
 
 		const {companyId, namespace} = this.context;
 
-		return fetchDocuments(this.props.fetchDocumentsVisibleUrl, {
+		return fetchDocuments(this.props.fetchDocumentsVisibleURL, {
 			[`${namespace}companyId`]: companyId,
 			[`${namespace}from`]: DELTA * this.state.visibleCur,
 			[`${namespace}keywords`]: this.props.searchQuery,
@@ -462,7 +448,7 @@ class ResultRankingsForm extends Component {
 
 		const {companyId, namespace} = this.context;
 
-		return fetchDocuments(this.props.fetchDocumentsHiddenUrl, {
+		return fetchDocuments(this.props.fetchDocumentsHiddenURL, {
 			[`${namespace}companyId`]: companyId,
 			[`${namespace}from`]: DELTA * this.state.hiddenCur,
 			[`${namespace}keywords`]: this.props.searchQuery,
@@ -563,7 +549,7 @@ class ResultRankingsForm extends Component {
 	_handlePublish = () => {
 		const {namespace} = this.context;
 
-		fetchResponse(this.props.validateFormUrl, {
+		fetchResponse(this.props.validateFormURL, {
 			[`${namespace}aliases`]: this.state.aliases,
 			[`${namespace}inactive`]: this.state.inactive,
 			[`${namespace}keywords`]: this.props.searchQuery,
@@ -736,8 +722,8 @@ class ResultRankingsForm extends Component {
 		const {namespace} = this.context;
 
 		const {
-			cancelUrl,
-			fetchDocumentsSearchUrl,
+			cancelURL,
+			fetchDocumentsSearchURL,
 			initialGroupExternalReferenceCode,
 			initialSXPBlueprintExternalReferenceCode,
 			searchQuery,
@@ -768,14 +754,14 @@ class ResultRankingsForm extends Component {
 			<div className="result-rankings-form-root">
 				<HiddenInputs
 					valueMap={{
+						addedHiddenIds: this._getHiddenAdded(),
 						aliases,
 						groupExternalReferenceCode: initialGroupExternalReferenceCode,
-						hiddenIdsAdded: this._getHiddenAdded(),
-						hiddenIdsRemoved: this._getHiddenRemoved(),
 						inactive,
 						pinnedIds: resultIdsPinned,
 						pinnedIdsEndIndex: dataLoadIndex.pinned.end,
 						pinnedIdsStartIndex: dataLoadIndex.pinned.start,
+						removedHiddenIds: this._getHiddenRemoved(),
 						sxpBlueprintExternalReferenceCode: initialSXPBlueprintExternalReferenceCode,
 						workflowAction,
 					}}
@@ -783,7 +769,7 @@ class ResultRankingsForm extends Component {
 
 				<PageToolbar
 					inactive={inactive}
-					onCancel={cancelUrl}
+					onCancel={cancelURL}
 					onChangeActive={this._handleActive}
 					onPublish={this._handlePublish}
 				/>
@@ -878,8 +864,8 @@ class ResultRankingsForm extends Component {
 											dataLoading={dataLoadingVisible}
 											dataMap={dataMap}
 											displayError={displayError}
-											fetchDocumentsSearchUrl={
-												fetchDocumentsSearchUrl
+											fetchDocumentsSearchURL={
+												fetchDocumentsSearchURL
 											}
 											onAddResultSubmit={
 												this._handleUpdateAddResultIds
@@ -930,16 +916,12 @@ class ResultRankingsForm extends Component {
 					<FormValueDebugger
 						values={[
 							{
-								name: `${namespace}aliases`,
-								value: aliases,
-							},
-							{
-								name: `${namespace}hiddenIdsAdded`,
+								name: `${namespace}addedHiddenIds`,
 								value: this._getHiddenAdded(),
 							},
 							{
-								name: `${namespace}hiddenIdsRemoved`,
-								value: this._getHiddenRemoved(),
+								name: `${namespace}aliases`,
+								value: aliases,
 							},
 							{
 								name: `${namespace}pinnedIds`,
@@ -952,6 +934,10 @@ class ResultRankingsForm extends Component {
 							{
 								name: `${namespace}pinnedIdsStartIndex`,
 								value: dataLoadIndex.pinned.start,
+							},
+							{
+								name: `${namespace}removedHiddenIds`,
+								value: this._getHiddenRemoved(),
 							},
 							{
 								name: `${namespace}workflowAction`,

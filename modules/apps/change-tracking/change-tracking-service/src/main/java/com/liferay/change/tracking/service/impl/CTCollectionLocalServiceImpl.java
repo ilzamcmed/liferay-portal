@@ -12,8 +12,10 @@ import com.liferay.change.tracking.conflict.ConflictInfo;
 import com.liferay.change.tracking.constants.CTConstants;
 import com.liferay.change.tracking.exception.CTCollectionDescriptionException;
 import com.liferay.change.tracking.exception.CTCollectionNameException;
+import com.liferay.change.tracking.exception.CTCollectionStatusException;
 import com.liferay.change.tracking.exception.CTEnclosureException;
 import com.liferay.change.tracking.exception.CTLocalizedException;
+import com.liferay.change.tracking.exception.CTPublishConflictException;
 import com.liferay.change.tracking.internal.CTEnclosureUtil;
 import com.liferay.change.tracking.internal.CTServiceCopier;
 import com.liferay.change.tracking.internal.CTServiceRegistry;
@@ -47,6 +49,7 @@ import com.liferay.change.tracking.spi.display.CTDisplayRenderer;
 import com.liferay.change.tracking.spi.resolver.ConstraintResolver;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
+import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.sql.dsl.DSLQueryFactoryUtil;
 import com.liferay.petra.string.CharPool;
@@ -518,13 +521,27 @@ public class CTCollectionLocalServiceImpl
 				"Change tracking collection " + ctCollection + " is read only");
 		}
 
+		List<CTEntry> ctEntries = new ArrayList<>();
+
 		Map<Long, List<CTEntry>> relateCTEntriesMap = _getRelateCTEntriesMap(
 			ctCollection, modelClassNameId, modelClassPK);
 
 		for (Map.Entry<Long, List<CTEntry>> entry :
 				relateCTEntriesMap.entrySet()) {
 
+			ctEntries.addAll(entry.getValue());
+
 			_discardCTEntries(ctCollection, entry.getKey(), entry.getValue());
+		}
+
+		Indexer<CTEntry> indexer = _indexerRegistry.getIndexer(CTEntry.class);
+
+		if (indexer != null) {
+			_indexWriterHelper.deleteDocuments(
+				ctCollection.getCompanyId(),
+				TransformUtil.transform(
+					ctEntries, ctEntry -> _uidFactory.getUID(ctEntry)),
+				indexer.isCommitImmediately());
 		}
 	}
 
@@ -765,7 +782,7 @@ public class CTCollectionLocalServiceImpl
 			(fromCTCollection.getStatus() !=
 				WorkflowConstants.STATUS_PENDING)) {
 
-			throw new PortalException(
+			throw new CTCollectionStatusException(
 				"Change tracking collection " + fromCTCollection +
 					" is read only");
 		}
@@ -776,7 +793,7 @@ public class CTCollectionLocalServiceImpl
 		if ((toCTCollection.getStatus() != WorkflowConstants.STATUS_DRAFT) &&
 			(toCTCollection.getStatus() != WorkflowConstants.STATUS_PENDING)) {
 
-			throw new PortalException(
+			throw new CTCollectionStatusException(
 				"Change tracking collection " + toCTCollection +
 					" is read only");
 		}
@@ -786,8 +803,8 @@ public class CTCollectionLocalServiceImpl
 
 		List<CTEntry> ctEntries = new ArrayList<>();
 
-		for (List<CTEntry> entries : relatedCTEntriesMap.values()) {
-			ctEntries.addAll(entries);
+		for (List<CTEntry> curCTEntries : relatedCTEntriesMap.values()) {
+			ctEntries.addAll(curCTEntries);
 		}
 
 		Map<Long, List<ConflictInfo>> conflictInfoMap = checkConflicts(
@@ -796,7 +813,7 @@ public class CTCollectionLocalServiceImpl
 			toCTCollection.getName());
 
 		if (!conflictInfoMap.isEmpty()) {
-			throw new PortalException("Conflict detected");
+			throw new CTPublishConflictException("Conflict detected");
 		}
 
 		for (Map.Entry<Long, List<CTEntry>> entry :
@@ -805,6 +822,24 @@ public class CTCollectionLocalServiceImpl
 			_moveCTEntries(
 				fromCTCollection.getCompanyId(), fromCTCollectionId,
 				toCTCollectionId, entry.getKey(), entry.getValue());
+		}
+
+		relatedCTEntriesMap = _getRelateCTEntriesMap(
+			toCTCollection, modelClassNameId, modelClassPK);
+
+		ctEntries = new ArrayList<>();
+
+		for (List<CTEntry> curCTEntries : relatedCTEntriesMap.values()) {
+			ctEntries.addAll(curCTEntries);
+		}
+
+		conflictInfoMap = checkConflicts(
+			fromCTCollection.getCompanyId(), ctEntries, toCTCollectionId,
+			toCTCollection.getName(), CTConstants.CT_COLLECTION_ID_PRODUCTION,
+			"Production");
+
+		if (!conflictInfoMap.isEmpty()) {
+			throw new CTPublishConflictException("Conflict detected");
 		}
 	}
 
@@ -1162,7 +1197,7 @@ public class CTCollectionLocalServiceImpl
 		Map<Long, Set<Long>> enclosureMap = CTEnclosureUtil.getEnclosureMap(
 			ctClosure, modelClassNameId, modelClassPK);
 
-		Map<Long, List<CTEntry>> discardCTEntries = new HashMap<>();
+		Map<Long, List<CTEntry>> relatedEntriesMap = new HashMap<>();
 
 		for (Map.Entry<Long, Set<Long>> enclosureEntry :
 				enclosureMap.entrySet()) {
@@ -1186,10 +1221,10 @@ public class CTCollectionLocalServiceImpl
 				continue;
 			}
 
-			discardCTEntries.put(classNameId, ctEntries);
+			relatedEntriesMap.put(classNameId, ctEntries);
 		}
 
-		return discardCTEntries;
+		return relatedEntriesMap;
 	}
 
 	private void _moveCTEntries(

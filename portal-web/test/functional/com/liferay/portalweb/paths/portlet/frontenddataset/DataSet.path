@@ -49,6 +49,11 @@
 <!--DATA SET VIEWS-->
 
 <tr>
+	<td>VIEW_SELECT_DISABLED</td>
+	<td>//div[label[normalize-space(text())='${key_fieldName}']]//select[@disabled]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>VIEW_ENTRY_BUTTON</td>
 	<td>//div[contains(@class,'show')]//button[contains(.,'Edit')]</td>
 	<td></td>
@@ -96,6 +101,11 @@
 <tr>
 	<td>FIELDS_TABLE_AND_ROW</td>
 	<td>//th[contains(text(),'${key_tableColumn}')]/ancestor::table[contains(@class,'table-list')]//tr[@class='orderable-table-row']//*[contains(.,'${key_tableRow}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>VIEW_BY_ROW</td>
+	<td>//li[${key_viewRow}]//div[contains(@class,'table-list-title')]/a[text()='${key_viewName}']</td>
 	<td></td>
 </tr>
 
@@ -210,6 +220,31 @@
 
 <!-- DATA SET FILTERS -->
 
+<tr>
+	<td>DATE_CALENDAR</td>
+	<td>//div[contains(label,'${key_label}')]//button[contains(@class,'date-picker-dropdown-toggle')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>DATE_CALENDAR_DAY</td>
+	<td>xpath=(//div[@class='date-picker-calendar-body']//div[@class='date-picker-col']/button[text()=${key_valueDay}])[${key_index}]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>YEAR_CALENDAR_FIELD</td>
+	<td>xpath=(//div[contains(@class, 'input-date-picker-year')])[${key_index}]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>YEAR_CALENDAR_OPTION</td>
+	<td>//div[contains(@class, 'dropdown-menu')]//button[contains(@class, 'dropdown-item') and contains(., '${key_optionYear}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>DATE_FIELD</td>
+	<td>//input[contains(@name,'FDSViewsPortlet_${key_label}')]/following-sibling::input</td>
+	<td></td>
+</tr>
 <tr>
 	<td>FILTER_BY_DROPDOWN</td>
 	<td>//select[contains(@title, 'Filter By')]</td>

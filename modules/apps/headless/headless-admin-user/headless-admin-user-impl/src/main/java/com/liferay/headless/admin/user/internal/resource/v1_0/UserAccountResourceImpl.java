@@ -80,6 +80,7 @@ import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TextFormatter;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterContext;
@@ -91,7 +92,8 @@ import com.liferay.portal.vulcan.multipart.MultipartBody;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 import com.liferay.portal.vulcan.util.SearchUtil;
-import com.liferay.users.admin.kernel.util.UsersAdmin;
+import com.liferay.portlet.usersadmin.util.UsersAdminUtil;
+import com.liferay.user.associated.data.anonymizer.UADAnonymousUserProvider;
 
 import java.util.Calendar;
 import java.util.Collections;
@@ -104,6 +106,7 @@ import java.util.Objects;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
@@ -343,7 +346,7 @@ public class UserAccountResourceImpl extends BaseUserAccountResourceImpl {
 								organizationId))),
 					BooleanClauseOccur.MUST);
 			},
-			filter, search, pagination, sorts);
+			filter, search, pagination, sorts, null);
 	}
 
 	@Override
@@ -366,12 +369,21 @@ public class UserAccountResourceImpl extends BaseUserAccountResourceImpl {
 					new TermFilter("groupId", String.valueOf(siteId)),
 					BooleanClauseOccur.MUST);
 			},
-			filter, search, pagination, sorts);
+			filter, search, pagination, sorts, null);
 	}
 
 	@Override
 	public UserAccount getUserAccount(Long userAccountId) throws Exception {
 		return _toUserAccount(_userService.getUserById(userAccountId));
+	}
+
+	@Override
+	public UserAccount getUserAccountByEmailAddress(String emailAddress)
+		throws Exception {
+
+		return _toUserAccount(
+			_userService.getUserByEmailAddress(
+				contextCompany.getCompanyId(), emailAddress));
 	}
 
 	@Override
@@ -382,6 +394,62 @@ public class UserAccountResourceImpl extends BaseUserAccountResourceImpl {
 		return _toUserAccount(
 			_userService.getUserByExternalReferenceCode(
 				contextCompany.getCompanyId(), externalReferenceCode));
+	}
+
+	@Override
+	public Page<UserAccount> getUserAccountsByStatusPage(
+			String status, String search, Filter filter, Pagination pagination,
+			Sort[] sorts)
+		throws Exception {
+
+		Integer statusInteger = null;
+
+		if (StringUtil.equalsIgnoreCase(
+				UserAccount.Status.ACTIVE.getValue(), status)) {
+
+			statusInteger = WorkflowConstants.STATUS_APPROVED;
+		}
+		else if (StringUtil.equalsIgnoreCase(
+					UserAccount.Status.INACTIVE.getValue(), status)) {
+
+			statusInteger = WorkflowConstants.STATUS_INACTIVE;
+		}
+		else {
+			throw new BadRequestException("Invalid status: " + status);
+		}
+
+		return _getUserAccountsPage(
+			HashMapBuilder.putAll(
+				_getCompanyScopeActions(
+					ActionKeys.VIEW, new String[] {"getUserAccountsPage"},
+					User.class.getName())
+			).putAll(
+				_getCompanyScopeActions(
+					ActionKeys.ADD_USER,
+					new String[] {
+						"postUserAccount",
+						"putUserAccountByExternalReferenceCode"
+					},
+					PortletKeys.PORTAL)
+			).build(),
+			booleanQuery -> {
+				BooleanFilter booleanFilter =
+					booleanQuery.getPreBooleanFilter();
+
+				User user = _uadAnonymousUserProvider.getAnonymousUser(
+					contextCompany.getCompanyId());
+
+				if (user != null) {
+					booleanFilter.add(
+						new TermFilter("screenName", user.getScreenName()),
+						BooleanClauseOccur.MUST_NOT);
+				}
+
+				booleanFilter.add(
+					new TermFilter("userName", StringPool.BLANK),
+					BooleanClauseOccur.MUST_NOT);
+			},
+			filter, search, pagination, sorts, statusInteger);
 	}
 
 	@Override
@@ -411,7 +479,7 @@ public class UserAccountResourceImpl extends BaseUserAccountResourceImpl {
 					new TermFilter("userName", StringPool.BLANK),
 					BooleanClauseOccur.MUST_NOT);
 			},
-			filter, search, pagination, sorts);
+			filter, search, pagination, sorts, null);
 	}
 
 	@Override
@@ -455,16 +523,16 @@ public class UserAccountResourceImpl extends BaseUserAccountResourceImpl {
 
 		User user = accountEntryUserRel.getUser();
 
-		_usersAdmin.updateAddresses(
+		UsersAdminUtil.updateAddresses(
 			Contact.class.getName(), user.getContactId(),
 			_getAddresses(userAccount));
-		_usersAdmin.updateEmailAddresses(
+		UsersAdminUtil.updateEmailAddresses(
 			Contact.class.getName(), user.getContactId(),
 			_getServiceBuilderEmailAddresses(userAccount));
-		_usersAdmin.updatePhones(
+		UsersAdminUtil.updatePhones(
 			Contact.class.getName(), user.getContactId(),
 			_getServiceBuilderPhones(userAccount));
-		_usersAdmin.updateWebsites(
+		UsersAdminUtil.updateWebsites(
 			Contact.class.getName(), user.getContactId(),
 			_getWebsites(userAccount));
 
@@ -634,16 +702,16 @@ public class UserAccountResourceImpl extends BaseUserAccountResourceImpl {
 			PermissionThreadLocal.setPermissionChecker(
 				_permissionCheckerFactory.create(user));
 
-			_usersAdmin.updateAddresses(
+			UsersAdminUtil.updateAddresses(
 				Contact.class.getName(), user.getContactId(),
 				_getAddresses(userAccount));
-			_usersAdmin.updateEmailAddresses(
+			UsersAdminUtil.updateEmailAddresses(
 				Contact.class.getName(), user.getContactId(),
 				_getServiceBuilderEmailAddresses(userAccount));
-			_usersAdmin.updatePhones(
+			UsersAdminUtil.updatePhones(
 				Contact.class.getName(), user.getContactId(),
 				_getServiceBuilderPhones(userAccount));
-			_usersAdmin.updateWebsites(
+			UsersAdminUtil.updateWebsites(
 				Contact.class.getName(), user.getContactId(),
 				_getWebsites(userAccount));
 		}
@@ -703,6 +771,24 @@ public class UserAccountResourceImpl extends BaseUserAccountResourceImpl {
 			Long userAccountId, UserAccount userAccount)
 		throws Exception {
 
+		String status = userAccount.getStatusAsString();
+
+		Integer workflowStatus = null;
+
+		if (StringUtil.equalsIgnoreCase(
+				UserAccount.Status.ACTIVE.getValue(), status)) {
+
+			workflowStatus = WorkflowConstants.STATUS_APPROVED;
+		}
+		else if (StringUtil.equalsIgnoreCase(
+					UserAccount.Status.INACTIVE.getValue(), status)) {
+
+			workflowStatus = WorkflowConstants.STATUS_INACTIVE;
+		}
+		else {
+			throw new BadRequestException("Status is invalid");
+		}
+
 		AccountBrief[] accountBriefs = userAccount.getAccountBriefs();
 
 		if (accountBriefs != null) {
@@ -750,6 +836,11 @@ public class UserAccountResourceImpl extends BaseUserAccountResourceImpl {
 		_updatePassword(
 			user, userAccount.getCurrentPassword(), userAccount.getPassword());
 
+		ServiceContext serviceContext = _createServiceContext(userAccount);
+
+		_userService.updateStatus(
+			userAccountId, workflowStatus, serviceContext);
+
 		return _toUserAccount(
 			_userService.updateUser(
 				userAccountId, null, null, null, false, null, null,
@@ -770,7 +861,7 @@ public class UserAccountResourceImpl extends BaseUserAccountResourceImpl {
 				_getWebsites(userAccount),
 				_announcementsDeliveryLocalService.getUserDeliveries(
 					userAccountId),
-				_createServiceContext(userAccount)));
+				serviceContext));
 	}
 
 	@Override
@@ -1155,7 +1246,8 @@ public class UserAccountResourceImpl extends BaseUserAccountResourceImpl {
 	private Page<UserAccount> _getUserAccountsPage(
 			Map<String, Map<String, String>> actions,
 			UnsafeConsumer<BooleanQuery, Exception> booleanQueryUnsafeConsumer,
-			Filter filter, String search, Pagination pagination, Sort[] sorts)
+			Filter filter, String search, Pagination pagination, Sort[] sorts,
+			Integer status)
 		throws Exception {
 
 		return SearchUtil.search(
@@ -1163,8 +1255,10 @@ public class UserAccountResourceImpl extends BaseUserAccountResourceImpl {
 			search, pagination,
 			queryConfig -> queryConfig.setSelectedFieldNames(
 				Field.ENTRY_CLASS_PK),
-			searchContext -> searchContext.setCompanyId(
-				contextCompany.getCompanyId()),
+			searchContext -> {
+				searchContext.setAttribute(Field.STATUS, status);
+				searchContext.setCompanyId(contextCompany.getCompanyId());
+			},
 			sorts,
 			document -> _toUserAccount(
 				actions,
@@ -1327,6 +1421,9 @@ public class UserAccountResourceImpl extends BaseUserAccountResourceImpl {
 	private Portal _portal;
 
 	@Reference
+	private UADAnonymousUserProvider _uadAnonymousUserProvider;
+
+	@Reference
 	private UserGroupRoleLocalService _userGroupRoleLocalService;
 
 	@Reference
@@ -1339,9 +1436,6 @@ public class UserAccountResourceImpl extends BaseUserAccountResourceImpl {
 
 	@Reference(target = DTOConverterConstants.USER_RESOURCE_DTO_CONVERTER)
 	private DTOConverter<User, UserAccount> _userResourceDTOConverter;
-
-	@Reference
-	private UsersAdmin _usersAdmin;
 
 	@Reference
 	private UserService _userService;

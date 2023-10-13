@@ -6,25 +6,42 @@
 import {useEffect, useMemo} from 'react';
 
 import {LiferayPicklistName} from '../../../common/enums/liferayPicklistName';
-import useGetListTypeDefinitions from '../../../common/services/liferay/list-type-definitions/useGetListTypeDefinitions';
-import useGetMyUserAccount from '../../../common/services/liferay/user-account/useGetMyUserAccount';
+import ListTypeDefinition from '../../../common/interfaces/listTypeDefinition';
+import UserAccount from '../../../common/interfaces/userAccount';
+import {LiferayAPIs} from '../../../common/services/liferay/common/enums/apis';
+import LiferayItems from '../../../common/services/liferay/common/interfaces/liferayItems';
+import useGet from '../../../common/services/liferay/object/useGet';
 import getEntriesByListTypeDefinitions from '../../../common/utils/getEntriesByListTypeDefinitions';
 
 export default function useDynamicFieldEntries(
-	handleSelected: (firstName?: string, lastName?: string) => void
+	handleSelected: (
+		firstName?: string,
+		lastName?: string,
+		emailAddress?: string,
+		telephone?: string
+	) => void
 ) {
-	const {data: userAccount} = useGetMyUserAccount();
-	const {data: listTypeDefinitions} = useGetListTypeDefinitions([
-		LiferayPicklistName.COUNTRIES,
-		LiferayPicklistName.STATES,
-		LiferayPicklistName.PROJECT_CATEGORIES,
-		LiferayPicklistName.PROJECT_INFORMATIONS,
-		LiferayPicklistName.JOB_ROLES,
-		LiferayPicklistName.DEPARTMENTS,
-		LiferayPicklistName.INDUSTRIES,
-		LiferayPicklistName.STATES,
-		LiferayPicklistName.CURRENCIES,
-	]);
+	const {data: userAccount} = useGet<UserAccount>(
+		`/o/${LiferayAPIs.HEADERLESS_ADMIN_USER}/my-user-account`
+	);
+
+	const {data: listTypeDefinitions} = useGet<
+		LiferayItems<ListTypeDefinition[]>
+	>(
+		`/o/${
+			LiferayAPIs.HEADERLESS_ADMIN_LIST_TYPE
+		}/list-type-definitions?filter=name in ('${[
+			LiferayPicklistName.COUNTRIES,
+			LiferayPicklistName.STATES,
+			LiferayPicklistName.PROJECT_CATEGORIES,
+			LiferayPicklistName.PROJECT_INFORMATIONS,
+			LiferayPicklistName.JOB_ROLES,
+			LiferayPicklistName.DEPARTMENTS,
+			LiferayPicklistName.INDUSTRIES,
+			LiferayPicklistName.STATES,
+			LiferayPicklistName.CURRENCIES,
+		].join("', '")}')`
+	);
 
 	const companiesEntries = useMemo(
 		() =>
@@ -35,11 +52,30 @@ export default function useDynamicFieldEntries(
 		[userAccount?.accountBriefs]
 	);
 
+	const partnerPrimaryPhone = userAccount?.userAccountContactInformation?.telephones?.find(
+		(phoneNumber) => phoneNumber.primary
+	);
+
 	useEffect(() => {
-		if (userAccount?.givenName || userAccount?.familyName) {
-			handleSelected(userAccount?.givenName, userAccount?.familyName);
+		if (
+			userAccount?.givenName ||
+			(userAccount?.familyName && userAccount?.emailAddress) ||
+			partnerPrimaryPhone?.phoneNumber
+		) {
+			handleSelected(
+				userAccount?.givenName,
+				userAccount?.familyName,
+				userAccount?.emailAddress,
+				partnerPrimaryPhone?.phoneNumber
+			);
 		}
-	}, [handleSelected, userAccount?.familyName, userAccount?.givenName]);
+	}, [
+		handleSelected,
+		userAccount?.familyName,
+		userAccount?.givenName,
+		userAccount?.emailAddress,
+		partnerPrimaryPhone?.phoneNumber,
+	]);
 
 	const fieldEntries = useMemo(
 		() => getEntriesByListTypeDefinitions(listTypeDefinitions?.items),

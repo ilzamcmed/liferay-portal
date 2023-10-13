@@ -121,9 +121,13 @@ public class DuplicateQueryStringsDetectorImpl
 				return;
 			}
 
+			_groupExternalReferenceCode =
+				criteriaImpl._groupExternalReferenceCode;
 			_index = criteriaImpl._index;
 			_queryStrings = new HashSet<>(criteriaImpl._queryStrings);
 			_rankingIndexName = criteriaImpl._rankingIndexName;
+			_sxpBlueprintExternalReferenceCode =
+				criteriaImpl._sxpBlueprintExternalReferenceCode;
 			_unlessRankingDocumentId = criteriaImpl._unlessRankingDocumentId;
 		}
 
@@ -241,10 +245,6 @@ public class DuplicateQueryStringsDetectorImpl
 	}
 
 	private Query _getGroupExternalReferenceCodeQuery(Criteria criteria) {
-		if (Validator.isBlank(criteria.getGroupExternalReferenceCode())) {
-			return null;
-		}
-
 		return queries.term(
 			RankingFields.GROUP_EXTERNAL_REFERENCE_CODE,
 			criteria.getGroupExternalReferenceCode());
@@ -271,12 +271,6 @@ public class DuplicateQueryStringsDetectorImpl
 
 	private Query _getSXPBlueprintExternalReferenceCodeQuery(
 		Criteria criteria) {
-
-		if (Validator.isBlank(
-				criteria.getSXPBlueprintExternalReferenceCode())) {
-
-			return null;
-		}
 
 		return queries.term(
 			RankingFields.SXP_BLUEPRINT_EXTERNAL_REFERENCE_CODE,

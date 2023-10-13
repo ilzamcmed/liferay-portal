@@ -26,6 +26,13 @@ export declare enum ObjectRelationshipType {
 	ONE_TO_MANY = 'oneToMany',
 	ONE_TO_ONE = 'oneToOne',
 }
+export declare const OBJECT_RELATIONSHIP_TYPES: {
+	description: string;
+	label: string;
+	objectInputLabel1: string;
+	objectInputLabel2: string;
+	value: ObjectRelationshipType;
+}[];
 export declare function useObjectRelationshipForm({
 	initialValues,
 	onSubmit,
@@ -34,7 +41,9 @@ export declare function useObjectRelationshipForm({
 	errors: FormError<ObjectRelationship>;
 	handleChange: React.ChangeEventHandler<HTMLInputElement>;
 	handleSubmit: React.FormEventHandler<HTMLFormElement>;
-	handleValidate: () => FormError<ObjectRelationship>;
+	handleValidate: (
+		editedValues?: Partial<ObjectRelationship> | undefined
+	) => FormError<ObjectRelationship>;
 	setValues: (values: Partial<ObjectRelationship>) => void;
 	values: Partial<ObjectRelationship>;
 };

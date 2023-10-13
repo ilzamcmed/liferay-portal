@@ -90,7 +90,7 @@ const ItemActionForm = ({
 		initialValues?.label_i18n ?? {}
 	);
 	const [labelValidationError, setLabelValidationError] = useState(false);
-	const [saveButtonDisabled, setSaveButtonDisabled] = useState(true);
+	const [saveButtonDisabled, setSaveButtonDisabled] = useState(!editing);
 	const [urlValidationError, setURLValidationError] = useState(false);
 
 	const [actionData, setActionData] = useState({
@@ -108,10 +108,8 @@ const ItemActionForm = ({
 		setSaveButtonDisabled(true);
 
 		const {
-			confirmationMessage,
 			confirmationMessageType,
 			iconSymbol,
-			label,
 			permissionKey,
 			type,
 			url,
@@ -119,27 +117,16 @@ const ItemActionForm = ({
 
 		const body = {
 			[OBJECT_RELATIONSHIP.FDS_VIEW_FDS_ACTION_ID]: fdsView.id,
+			confirmationMessage_i18n: confirmationMessageTranslations,
 			icon: iconSymbol,
+			label_i18n: labelTranslations,
 			permissionKey,
 			type,
 			url,
 		} as any;
 
-		if (Liferay.FeatureFlags['LPS-172017']) {
-			body.confirmationMessage_i18n = confirmationMessageTranslations;
-			body.label_i18n = labelTranslations;
-
-			if (Object.keys(confirmationMessageTranslations).length) {
-				body.confirmationMessageType = confirmationMessageType;
-			}
-		}
-		else {
-			body.confirmationMessage = confirmationMessage;
-			body.label = label;
-
-			if (confirmationMessage) {
-				body.confirmationMessageType = confirmationMessageType;
-			}
+		if (Object.keys(confirmationMessageTranslations).length) {
+			body.confirmationMessageType = confirmationMessageType;
 		}
 
 		let fetchURL = API_URL.FDS_ACTIONS;
@@ -179,18 +166,10 @@ const ItemActionForm = ({
 	const validateForm = () => {
 		let valid = true;
 
-		if (!actionData.url) {
-			valid = false;
-		}
-
 		if (
-			Liferay.FeatureFlags['LPS-172017'] &&
+			!actionData.url ||
 			!translationExists({translations: labelTranslations})
 		) {
-			valid = false;
-		}
-
-		if (!Liferay.FeatureFlags['LPS-172017'] && !actionData.label) {
 			valid = false;
 		}
 
@@ -227,12 +206,10 @@ const ItemActionForm = ({
 		getIcons();
 	}, [spritemap]);
 
-	const labelFormElementId = `${namespace}Label`;
 	const permissionKeyFormElementId = `${namespace}PermissionKey`;
 	const iconFormElementId = `${namespace}Icon`;
 	const typeFormElementId = `${namespace}Type`;
 	const urlFormElementId = `${namespace}URL`;
-	const confirmationMessageFormElementId = `${namespace}ConfirmationMessage`;
 	const confirmationMessageTypeFormElementId = `${namespace}ConfirmationMessageType`;
 
 	return (
@@ -251,66 +228,31 @@ const ItemActionForm = ({
 				<ClayPanel.Body>
 					<ClayLayout.Row>
 						<ClayLayout.Col size={8}>
-							{Liferay.FeatureFlags['LPS-172017'] ? (
-								<InputLocalized
-									error={
-										labelValidationError
-											? Liferay.Language.get(
-													'this-field-is-required'
-											  )
-											: undefined
-									}
-									label={Liferay.Language.get('label')}
-									onBlur={() => {
-										setLabelValidationError(
-											!translationExists({
-												translations: labelTranslations,
-											})
-										);
+							<InputLocalized
+								error={
+									labelValidationError
+										? Liferay.Language.get(
+												'this-field-is-required'
+										  )
+										: undefined
+								}
+								label={Liferay.Language.get('label')}
+								onBlur={() => {
+									setLabelValidationError(
+										!translationExists({
+											translations: labelTranslations,
+										})
+									);
 
-										validateForm();
-									}}
-									onChange={setLabelTranslations}
-									placeholder={Liferay.Language.get(
-										'action-name'
-									)}
-									required
-									translations={labelTranslations}
-								/>
-							) : (
-								<ClayForm.Group
-									className={classNames({
-										'has-error': labelValidationError,
-									})}
-								>
-									<label htmlFor={labelFormElementId}>
-										{Liferay.Language.get('label')}
-									</label>
-
-									<ClayInput
-										id={labelFormElementId}
-										onBlur={() => {
-											setLabelValidationError(
-												!actionData.label
-											);
-
-											validateForm();
-										}}
-										onChange={(event) =>
-											setActionData({
-												...actionData,
-												label: event.target.value,
-											})
-										}
-										type="text"
-										value={actionData.label}
-									/>
-
-									{labelValidationError && (
-										<ValidationFeedback />
-									)}
-								</ClayForm.Group>
-							)}
+									validateForm();
+								}}
+								onChange={setLabelTranslations}
+								placeholder={Liferay.Language.get(
+									'action-name'
+								)}
+								required
+								translations={labelTranslations}
+							/>
 						</ClayLayout.Col>
 
 						<ClayLayout.Col
@@ -449,61 +391,30 @@ const ItemActionForm = ({
 									placeholder={Liferay.Language.get(
 										'add-a-value-here'
 									)}
+									value={actionData.permissionKey}
 								/>
 							</ClayForm.Group>
 
 							<ClayLayout.Row>
 								<ClayLayout.Col size={8}>
 									<ClayForm.Group>
-										{Liferay.FeatureFlags['LPS-172017'] ? (
-											<InputLocalized
-												label={Liferay.Language.get(
-													'confirmation-message'
-												)}
-												onChange={
-													setConfirmationMessageTranslations
-												}
-												placeholder={Liferay.Language.get(
-													'add-a-message-here'
-												)}
-												tooltip={Liferay.Language.get(
-													'the-user-will-see-this-message-before-performing-the-action'
-												)}
-												translations={
-													confirmationMessageTranslations
-												}
-											/>
-										) : (
-											<>
-												<label
-													htmlFor={
-														confirmationMessageFormElementId
-													}
-												>
-													{Liferay.Language.get(
-														'confirmation-message'
-													)}
-												</label>
-
-												<ClayInput
-													id={
-														confirmationMessageFormElementId
-													}
-													onChange={(event) =>
-														setActionData({
-															...actionData,
-															confirmationMessage:
-																event.target
-																	.value,
-														})
-													}
-													type="text"
-													value={
-														actionData.confirmationMessage
-													}
-												/>
-											</>
-										)}
+										<InputLocalized
+											label={Liferay.Language.get(
+												'confirmation-message'
+											)}
+											onChange={
+												setConfirmationMessageTranslations
+											}
+											placeholder={Liferay.Language.get(
+												'add-a-message-here'
+											)}
+											tooltip={Liferay.Language.get(
+												'the-user-will-see-this-message-before-performing-the-action'
+											)}
+											translations={
+												confirmationMessageTranslations
+											}
+										/>
 									</ClayForm.Group>
 								</ClayLayout.Col>
 

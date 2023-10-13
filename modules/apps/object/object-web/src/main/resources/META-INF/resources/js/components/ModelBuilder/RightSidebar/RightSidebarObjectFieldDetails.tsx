@@ -3,13 +3,9 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import ClayButton, {ClayButtonWithIcon} from '@clayui/button';
+import {ClayButtonWithIcon} from '@clayui/button';
 import ClayPanel from '@clayui/panel';
-import {
-	API,
-	getLocalizableLabel,
-	openToast,
-} from '@liferay/object-js-components-web';
+import {API, openToast} from '@liferay/object-js-components-web';
 import {createResourceURL} from 'frontend-js-web';
 import React, {useEffect, useState} from 'react';
 import {useStore} from 'react-flow-renderer';
@@ -86,20 +82,29 @@ export function RightSidebarObjectFieldDetails() {
 		);
 	};
 
-	const onSubmit = async () => {
-		const validationErrors = handleValidate();
+	const onSubmit = async (editedObjectField?: Partial<ObjectField>) => {
+		const validationErrors = handleValidate(editedObjectField ?? values);
 
 		if (validationErrors.defaultValue) {
-			openToast({
-				message: Liferay.Language.get(
-					'please-fill-out-all-required-fields'
-				),
-				type: 'danger',
-			});
+			if (errors.defaultValue) {
+				openToast({
+					message: Liferay.Language.get(
+						'please-fill-out-all-required-fields'
+					),
+					type: 'danger',
+				});
+			}
 		}
 
 		if (!Object.keys(validationErrors).length) {
-			const {id, ...objectField} = values;
+			let objectField: Partial<ObjectField>;
+
+			if (!editedObjectField) {
+				objectField = values;
+			}
+			else {
+				objectField = editedObjectField;
+			}
 
 			delete objectField.defaultValue;
 			delete objectField.listTypeDefinitionId;
@@ -109,24 +114,30 @@ export function RightSidebarObjectFieldDetails() {
 				const updatedObjectFieldResponse = await API.save<ObjectField>({
 					item: objectField,
 					returnValue: true,
-					url: `/o/object-admin/v1.0/object-fields/${id}`,
+					url: `/o/object-admin/v1.0/object-fields/${objectField.id}`,
 				});
 
-				dispatch({
-					payload: {
-						objectDefinitionNodes: nodes,
-						objectRelationshipEdges: edges,
-						selectedObjectDefinitionNode,
-						updatedObjectField: updatedObjectFieldResponse as ObjectField,
-					},
-					type: TYPES.UPDATE_OBJECT_FIELD_NODE_ROW,
-				});
+				if (
+					selectedObjectDefinitionNode &&
+					updatedObjectFieldResponse
+				) {
+					dispatch({
+						payload: {
+							objectDefinitionNodes: nodes,
+							objectRelationshipEdges: edges,
+							selectedObjectDefinitionNode,
+							updatedObjectField: updatedObjectFieldResponse as ObjectField,
+						},
+						type: TYPES.UPDATE_OBJECT_FIELD_NODE_ROW,
+					});
 
-				openToast({
-					message: Liferay.Language.get(
-						'the-object-field-was-updated-successfully'
-					),
-				});
+					dispatch({
+						payload: {
+							updatedShowChangesSaved: true,
+						},
+						type: TYPES.SET_SHOW_CHANGES_SAVED,
+					});
+				}
 			}
 			catch (error) {
 				openToast({
@@ -150,41 +161,36 @@ export function RightSidebarObjectFieldDetails() {
 
 		makeFetch();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [selectedObjectField]);
+	}, []);
+
+	useEffect(() => {
+		if (errors.defaultValue) {
+			openToast({
+				message: Liferay.Language.get(
+					'please-fill-out-all-required-fields'
+				),
+				type: 'danger',
+			});
+		}
+	}, [errors]);
 
 	return (
 		<>
 			<div className="lfr-objects__model-builder-right-sidebar-definition-node-title">
-				<span>
-					{getLocalizableLabel(
-						selectedObjectDefinitionNode?.data
-							?.defaultLanguageId as Liferay.Language.Locale,
-						selectedObjectField?.label,
-						selectedObjectField?.name
-					)}
-				</span>
+				<span>{Liferay.Language.get('field-details')}</span>
 
 				<div className="lfr-objects__model-builder-right-sidebar-definition-node-title-buttons-container">
-					<ClayButton
-						aria-label="Save"
-						className="lfr-objects__model-builder-right-sidebar-definition-node-title-save-button"
-						displayType="primary"
-						onClick={() => onSubmit()}
-					>
-						{Liferay.Language.get('save')}
-					</ClayButton>
-
 					{!values.system &&
 						values.businessType !== 'Relationship' && (
 							<ClayButtonWithIcon
-								aria-label="Delete"
+								aria-label={Liferay.Language.get('delete')}
 								className="lfr-objects__model-builder-right-sidebar-definition-node-title-delete-button"
 								displayType="secondary"
 								onClick={() =>
 									handleTriggerDeleteObjectFieldModal()
 								}
 								symbol="trash"
-								title="Delete"
+								title={Liferay.Language.get('delete')}
 							/>
 						)}
 				</div>
@@ -216,6 +222,7 @@ export function RightSidebarObjectFieldDetails() {
 							selectedObjectDefinitionNode?.data
 								?.externalReferenceCode ?? ''
 						}
+						onSubmit={onSubmit}
 						readOnly={
 							!selectedObjectDefinitionNode?.data
 								?.hasObjectDefinitionUpdateResourcePermission ??
@@ -232,7 +239,10 @@ export function RightSidebarObjectFieldDetails() {
 				<ModalDeleteObjectField
 					objectField={values as ObjectField}
 					onAfterSubmit={() => {
-						if (selectedObjectField) {
+						if (
+							selectedObjectField &&
+							selectedObjectDefinitionNode
+						) {
 							dispatch({
 								payload: {
 									objectDefinitionNodes: nodes,

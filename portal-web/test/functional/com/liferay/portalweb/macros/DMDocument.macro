@@ -921,7 +921,7 @@ definition {
 
 			AssertTextEquals.assertPartialText(
 				locator1 = "Message#CHECKOUT_SUCCESS",
-				value1 = "You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day.");
+				value1 = "Info:You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day.");
 
 			DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "guest");
 
@@ -944,7 +944,7 @@ definition {
 
 		AssertTextEquals(
 			locator1 = "Message#CHECKOUT_SUCCESS",
-			value1 = "You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day.");
+			value1 = "Info:You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day.");
 
 		DMNavigator.gotoVerticalEllipsisMenuItem(menuItem = "Cancel Checkout");
 
@@ -986,12 +986,12 @@ definition {
 		if (${dmRepositoryName} == "true") {
 			AssertTextEquals.assertPartialText(
 				locator1 = "Message#CHECKOUT_SUCCESS",
-				value1 = "You now have an indefinite lock on this document. No one else can edit this document until you unlock it. This lock will never expire.");
+				value1 = "Info:You now have an indefinite lock on this document. No one else can edit this document until you unlock it. This lock will never expire.");
 		}
 		else {
 			AssertTextEquals.assertPartialText(
 				locator1 = "Message#CHECKOUT_SUCCESS",
-				value1 = "You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day.");
+				value1 = "Info:You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day.");
 		}
 
 		Click(locator1 = "Icon#TOOLBAR_ELLIPSIS");
@@ -1073,7 +1073,7 @@ definition {
 
 		AssertTextEquals(
 			locator1 = "Message#CHECKOUT_SUCCESS",
-			value1 = "You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day.");
+			value1 = "Info:You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day.");
 
 		DMNavigator.gotoVerticalEllipsisMenuItem(menuItem = "Checkin");
 
@@ -1122,7 +1122,7 @@ definition {
 		if (${dmRepositoryName} == "true") {
 			AssertTextEquals.assertPartialText(
 				locator1 = "Message#CHECKOUT_SUCCESS",
-				value1 = "You now have an indefinite lock on this document. No one else can edit this document until you unlock it. This lock will never expire.");
+				value1 = "Info:You now have an indefinite lock on this document. No one else can edit this document until you unlock it. This lock will never expire.");
 		}
 		else if (isSet(editStatus)) {
 			AssertClick(
@@ -1131,12 +1131,12 @@ definition {
 
 			AssertTextEquals.assertPartialText(
 				locator1 = "Message#CHECKOUT_SUCCESS",
-				value1 = "You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day.");
+				value1 = "Info:You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day.");
 		}
 		else {
 			AssertTextEquals.assertPartialText(
 				locator1 = "Message#CHECKOUT_SUCCESS",
-				value1 = "You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day.");
+				value1 = "Info:You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day.");
 		}
 	}
 
@@ -1153,7 +1153,7 @@ definition {
 
 		AssertTextEquals.assertPartialText(
 			locator1 = "Message#CHECKOUT_SUCCESS",
-			value1 = "You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day.");
+			value1 = "Info:You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day.");
 	}
 
 	macro checkoutViaManagementBar {
@@ -2968,8 +2968,8 @@ definition {
 		}
 
 		Type(
-			key_fieldLabel = "File Max Size",
-			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			key_text = "Maximum File Upload Size",
+			locator1 = "TextInput#ANY",
 			value1 = ${fieldValue});
 
 		SystemSettings.saveConfiguration();
@@ -3004,9 +3004,9 @@ definition {
 
 		if (isSet(checkPortletTitle)) {
 			AssertTextEquals(
-				key_portletTitle = "File Upload Limits",
+				key_portletTitle = "File Size Limits",
 				locator1 = "DocumentsAndMedia#PORTLET_TITLE",
-				value1 = "File Upload Limits");
+				value1 = "File Size Limits");
 		}
 
 		if (${indexNumber} == 2) {
@@ -3245,14 +3245,14 @@ definition {
 			AssertTextNotPresent(value1 = "You now have an indefinite lock on this document. No one else can edit this document until you unlock it. This lock will never expire.");
 		}
 		else {
-			AssertTextNotPresent(value1 = "You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day.");
+			AssertTextNotPresent(value1 = "Info:You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day.");
 		}
 	}
 
 	macro viewCheckedoutCP {
 		if (${dmRepositoryName} == "true") {
 			AssertTextEquals.assertPartialText(
-				locator1 = "Message#INFO",
+				locator1 = "Message#INFO_1",
 				value1 = "You now have an indefinite lock on this document. No one else can edit this document until you unlock it. This lock will never expire.");
 		}
 		else {
@@ -3487,6 +3487,8 @@ definition {
 		var key_metadataData = ${metadataData};
 		var key_metadataLabel = ${metadataLabel};
 
+		Panel.expandPanel(panel = "Automatically Extracted Metadata");
+
 		AssertElementPresent(
 			locator1 = "DocumentsAndMediaDocument#DOCUMENT_EXTRACTED_METADATA_FIELD",
 			value1 = ${metadataData});
@@ -3592,6 +3594,10 @@ definition {
 		}
 		else {
 			DMDocument.expandInfo();
+		}
+
+		if (isSet(panelName)) {
+			Panel.expandPanel(panel = ${panelName});
 		}
 
 		if (isSet(booleanValue)) {
@@ -4285,6 +4291,8 @@ definition {
 				value1 = ${dmDocumentTitle});
 
 			DMDocument.expandInfo();
+
+			Panel.expandPanel(panel = "Custom Fields");
 
 			AssertTextEquals(
 				locator1 = "DocumentsAndMediaDocument#CUSTOM_FIELD_NAME",

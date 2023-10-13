@@ -39,16 +39,13 @@ import com.liferay.portal.kernel.service.OrganizationService;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserService;
-import com.liferay.portal.kernel.service.permission.CommonPermissionUtil;
 import com.liferay.portal.kernel.service.permission.GroupPermissionUtil_IW;
 import com.liferay.portal.kernel.service.permission.LayoutPermissionUtil;
-import com.liferay.portal.kernel.service.permission.OrganizationPermissionUtil;
-import com.liferay.portal.kernel.service.permission.PortalPermissionUtil;
+import com.liferay.portal.kernel.service.permission.OrganizationPermissionUtil_IW;
+import com.liferay.portal.kernel.service.permission.PortalPermissionUtil_IW;
 import com.liferay.portal.kernel.service.permission.PortletPermissionUtil;
 import com.liferay.portal.kernel.service.permission.RolePermissionUtil_IW;
-import com.liferay.portal.kernel.service.permission.UserGroupPermissionUtil;
 import com.liferay.portal.kernel.service.permission.UserPermissionUtil_IW;
-import com.liferay.portal.kernel.servlet.BrowserSnifferUtil;
 import com.liferay.portal.kernel.template.TemplateContextContributor;
 import com.liferay.portal.kernel.template.TemplateHandler;
 import com.liferay.portal.kernel.template.TemplateHandlerRegistryUtil;
@@ -82,7 +79,10 @@ import com.liferay.portal.kernel.util.Validator_IW;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.webserver.WebServerServletTokenUtil;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
+import com.liferay.portal.service.permission.CommonPermissionUtil_IW;
 import com.liferay.portal.service.permission.PasswordPolicyPermissionUtil_IW;
+import com.liferay.portal.service.permission.UserGroupPermissionUtil_IW;
+import com.liferay.portal.servlet.BrowserSnifferUtil_IW;
 import com.liferay.portal.struts.Definition;
 import com.liferay.portal.struts.TilesUtil;
 import com.liferay.portal.template.ServiceLocator;
@@ -403,7 +403,7 @@ public class TemplateContextHelper {
 
 		try {
 			variables.put(
-				"browserSniffer", BrowserSnifferUtil.getBrowserSniffer());
+				"browserSniffer", BrowserSnifferUtil_IW.getInstance());
 		}
 		catch (SecurityException securityException) {
 			_log.error(securityException);
@@ -667,7 +667,7 @@ public class TemplateContextHelper {
 
 		try {
 			variables.put(
-				"commonPermission", CommonPermissionUtil.getCommonPermission());
+				"commonPermission", CommonPermissionUtil_IW.getInstance());
 		}
 		catch (SecurityException securityException) {
 			_log.error(securityException);
@@ -692,7 +692,7 @@ public class TemplateContextHelper {
 		try {
 			variables.put(
 				"organizationPermission",
-				OrganizationPermissionUtil.getOrganizationPermission());
+				OrganizationPermissionUtil_IW.getInstance());
 		}
 		catch (SecurityException securityException) {
 			_log.error(securityException);
@@ -709,7 +709,7 @@ public class TemplateContextHelper {
 
 		try {
 			variables.put(
-				"portalPermission", PortalPermissionUtil.getPortalPermission());
+				"portalPermission", PortalPermissionUtil_IW.getInstance());
 		}
 		catch (SecurityException securityException) {
 			_log.error(securityException);
@@ -749,7 +749,7 @@ public class TemplateContextHelper {
 		try {
 			variables.put(
 				"userGroupPermission",
-				UserGroupPermissionUtil.getUserGroupPermission());
+				UserGroupPermissionUtil_IW.getInstance());
 		}
 		catch (SecurityException securityException) {
 			_log.error(securityException);
@@ -793,7 +793,7 @@ public class TemplateContextHelper {
 		try {
 			variables.put(
 				"locationPermission",
-				OrganizationPermissionUtil.getOrganizationPermission());
+				OrganizationPermissionUtil_IW.getInstance());
 		}
 		catch (SecurityException securityException) {
 			_log.error(securityException);

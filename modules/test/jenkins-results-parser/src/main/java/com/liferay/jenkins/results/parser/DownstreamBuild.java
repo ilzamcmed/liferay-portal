@@ -59,10 +59,6 @@ public class DownstreamBuild extends BaseBuild {
 	}
 
 	@Override
-	public void findDownstreamBuilds() {
-	}
-
-	@Override
 	public URL getArtifactsBaseURL() {
 		TopLevelBuild topLevelBuild = getTopLevelBuild();
 
@@ -156,6 +152,11 @@ public class DownstreamBuild extends BaseBuild {
 		String jobVariant = getJobVariant();
 
 		return jobVariant.replaceAll("([^/]+)/.*", "$1");
+	}
+
+	@Override
+	public String getBuildName() {
+		return getAxisName();
 	}
 
 	@Override
@@ -512,14 +513,6 @@ public class DownstreamBuild extends BaseBuild {
 		}
 
 		return warningMessages;
-	}
-
-	public synchronized void update() {
-		super.update();
-
-		if (!JenkinsResultsParserUtil.isNullOrEmpty(getResult())) {
-			setStatus("completed");
-		}
 	}
 
 	protected DownstreamBuild(String url, TopLevelBuild topLevelBuild) {
@@ -932,14 +925,6 @@ public class DownstreamBuild extends BaseBuild {
 		}
 
 		return testResultGitHubElements;
-	}
-
-	protected void setResult(String result) {
-		this.result = result;
-
-		if (JenkinsResultsParserUtil.isNullOrEmpty(result)) {
-			setStatus("running");
-		}
 	}
 
 	private static final FailureMessageGenerator[] _FAILURE_MESSAGE_GENERATORS =

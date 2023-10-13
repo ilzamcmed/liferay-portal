@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import ClayButton, {ClayButtonWithIcon} from '@clayui/button';
+import {ClayButtonWithIcon} from '@clayui/button';
 import {createResourceURL, sub} from 'frontend-js-web';
 import React, {useEffect, useState} from 'react';
 import {Edge, Elements, Node, isEdge, isNode} from 'react-flow-renderer';
@@ -24,7 +24,10 @@ import {InputLocalized} from 'frontend-js-components-web';
 import {defaultLanguageId} from '../../../utils/constants';
 import {firstLetterUppercase} from '../../../utils/string';
 import {ModalDeleteObjectRelationship} from '../../ObjectRelationship/ModalDeleteObjectRelationship';
-import {useObjectRelationshipForm} from '../../ObjectRelationship/ObjectRelationshipFormBase';
+import {
+	OBJECT_RELATIONSHIP_TYPES,
+	useObjectRelationshipForm,
+} from '../../ObjectRelationship/ObjectRelationshipFormBase';
 import SelectObjectRelationship from '../../ObjectRelationship/SelectObjectRelationship';
 import {getUpdatedModelBuilderStructurePayload} from '../../ViewObjectDefinitions/objectDefinitionUtil';
 import {useObjectFolderContext} from '../ModelBuilderContext/objectFolderContext';
@@ -38,7 +41,12 @@ export function RightSidebarObjectRelationshipDetails({
 	objectRelationshipDeletionTypes,
 }: RightSidebarObjectRelationshipDetailsProps) {
 	const [
-		{baseResourceURL, elements, selectedObjectFolder},
+		{
+			baseResourceURL,
+			elements,
+			selectedObjectFolder,
+			selectedObjectRelationship,
+		},
 		dispatch,
 	] = useObjectFolderContext();
 	const [objectDefinition1, setObjectDefinition1] = useState<
@@ -61,12 +69,6 @@ export function RightSidebarObjectRelationshipDetails({
 		deleteObjectRelationship: false,
 	});
 
-	const selectedObjectRelationshipEdge = elements.find((element) => {
-		if (isEdge(element)) {
-			return (element as Edge<ObjectRelationshipEdgeData>).data?.selected;
-		}
-	}) as Edge<ObjectRelationshipEdgeData>;
-
 	const {
 		errors,
 		handleValidate,
@@ -84,9 +86,9 @@ export function RightSidebarObjectRelationshipDetails({
 
 	useEffect(() => {
 		const makeFetch = async () => {
-			if (selectedObjectRelationshipEdge) {
+			if (selectedObjectRelationship) {
 				const selectedObjectRelationshipResponse = (await API.getObjectRelationship(
-					selectedObjectRelationshipEdge.data!.objectRelationshipId
+					selectedObjectRelationship.data!.objectRelationshipId
 				)) as ObjectRelationship;
 
 				setValues(selectedObjectRelationshipResponse);
@@ -141,21 +143,24 @@ export function RightSidebarObjectRelationshipDetails({
 
 		makeFetch();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [selectedObjectRelationshipEdge]);
+	}, []);
 
-	const onSubmit = async () => {
+	const onSubmit = async (
+		editedObjectRelationship?: Partial<ObjectRelationship>
+	) => {
 		const validationErrors = handleValidate();
 
 		if (!Object.keys(validationErrors).length) {
-			const objectRelationship = {...values};
+			const objectRelationship = editedObjectRelationship ?? values;
 
 			try {
 				await API.putObjectRelationship(objectRelationship);
 
-				openToast({
-					message: Liferay.Language.get(
-						'the-object-relationship-was-updated-successfully'
-					),
+				dispatch({
+					payload: {
+						updatedShowChangesSaved: true,
+					},
+					type: TYPES.SET_SHOW_CHANGES_SAVED,
 				});
 			}
 			catch (error: unknown) {
@@ -224,17 +229,9 @@ export function RightSidebarObjectRelationshipDetails({
 				</div>
 
 				<div className="lfr-objects__model-builder-right-sidebar-object-relationship-title-buttons-container">
-					<ClayButton
-						aria-label={Liferay.Language.get('save-relationship')}
-						className="lfr-objects__model-builder-right-sidebar-object-relationship-title-save-button"
-						displayType="primary"
-						onClick={() => onSubmit()}
-					>
-						{Liferay.Language.get('save')}
-					</ClayButton>
-
 					<ClayButtonWithIcon
 						aria-label={Liferay.Language.get('delete-relationship')}
+						className="lfr-objects__model-builder-right-sidebar-object-relationship-title-delete-button"
 						displayType="secondary"
 						onClick={() =>
 							setShowModal({
@@ -253,6 +250,11 @@ export function RightSidebarObjectRelationshipDetails({
 					disabled={readOnly}
 					error={errors.label}
 					label={Liferay.Language.get('label')}
+					onBlur={(event) => {
+						event.stopPropagation();
+
+						onSubmit();
+					}}
 					onChange={(label) => setValues({label})}
 					required
 					translations={values.label as LocalizedValue<string>}
@@ -263,6 +265,17 @@ export function RightSidebarObjectRelationshipDetails({
 					label={Liferay.Language.get('name')}
 					required
 					value={values.name}
+				/>
+
+				<Input
+					disabled
+					label={Liferay.Language.get('type')}
+					required
+					value={
+						OBJECT_RELATIONSHIP_TYPES.find(
+							({value}) => value === values.type
+						)?.label
+					}
 				/>
 
 				<Input
@@ -286,6 +299,11 @@ export function RightSidebarObjectRelationshipDetails({
 				<SingleSelect
 					disabled={readOnly}
 					label={Liferay.Language.get('deletion-type')}
+					onBlur={(event) => {
+						event.stopPropagation();
+
+						onSubmit();
+					}}
 					onChange={(deletionType) =>
 						setValues({deletionType: deletionType.value})
 					}
@@ -298,8 +316,7 @@ export function RightSidebarObjectRelationshipDetails({
 				/>
 
 				{objectRelationshipParameterRequired &&
-					selectedObjectRelationshipEdge.data?.type ===
-						'oneToMany' && (
+					selectedObjectRelationship?.data?.type === 'oneToMany' && (
 						<>
 							<Input
 								label={Liferay.Language.get('api-endpoint')}
@@ -312,11 +329,16 @@ export function RightSidebarObjectRelationshipDetails({
 								objectDefinitionExternalReferenceCode1={
 									values.objectDefinitionExternalReferenceCode2 as string
 								}
-								onChange={(parameterObjectFieldName) =>
+								onChange={(parameterObjectFieldName) => {
 									setValues({
 										parameterObjectFieldName,
-									})
-								}
+									});
+
+									onSubmit({
+										...values,
+										parameterObjectFieldName,
+									});
+								}}
 								value={values.parameterObjectFieldName}
 							/>
 						</>

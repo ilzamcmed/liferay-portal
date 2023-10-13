@@ -45,8 +45,9 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 				StringBundler.concat(
 					"insert into Release_ (releaseId, createDate, ",
 					"modifiedDate, servletContextName, schemaVersion, ",
-					"buildNumber, verified, testString) values (",
-					ReleaseConstants.DEFAULT_ID, ", ?, ?, ?, ?, ?, ?, ?)"))) {
+					"buildNumber, buildDate, verified, testString) values (",
+					ReleaseConstants.DEFAULT_ID,
+					", ?, ?, ?, ?, ?, ?, ?, ?)"))) {
 
 			Date date = new Date(System.currentTimeMillis());
 
@@ -61,8 +62,13 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 			preparedStatement.setString(4, String.valueOf(schemaVersion));
 
 			preparedStatement.setInt(5, ReleaseInfo.getBuildNumber());
-			preparedStatement.setBoolean(6, false);
-			preparedStatement.setString(7, ReleaseConstants.TEST_STRING);
+
+			java.util.Date buildDate = ReleaseInfo.getBuildDate();
+
+			preparedStatement.setDate(6, new Date(buildDate.getTime()));
+
+			preparedStatement.setBoolean(7, false);
+			preparedStatement.setString(8, ReleaseConstants.TEST_STRING);
 
 			preparedStatement.executeUpdate();
 
@@ -70,9 +76,22 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 
 			_currentPortalReleaseDTODCLSingleton.getSingleton(
 				() -> new PortalReleaseDTO(
-					schemaVersion, ReleaseInfo.getBuildNumber(), 0,
+					schemaVersion, ReleaseInfo.getBuildNumber(), buildDate, 0,
 					ReleaseConstants.TEST_STRING));
 		}
+	}
+
+	public static java.util.Date getCurrentBuildDate(Connection connection)
+		throws SQLException {
+
+		PortalReleaseDTO portalReleaseDTO = _getCurrentPortalReleaseDTO(
+			connection);
+
+		if (portalReleaseDTO == PortalReleaseDTO._NULL_INSTANCE) {
+			return null;
+		}
+
+		return portalReleaseDTO._buildDate;
 	}
 
 	public static int getCurrentBuildNumber(Connection connection)
@@ -242,19 +261,19 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 	public static void updateBuildInfo(Connection connection)
 		throws SQLException {
 
+		java.util.Date buildDate = ReleaseInfo.getBuildDate();
+
 		_updateRelease(
 			connection, "buildNumber = ?, buildDate = ?",
 			preparedStatement -> {
 				preparedStatement.setInt(1, ReleaseInfo.getParentBuildNumber());
 
-				java.util.Date buildDate = ReleaseInfo.getBuildDate();
-
 				preparedStatement.setDate(2, new Date(buildDate.getTime()));
 			},
 			portalReleaseDTO -> new PortalReleaseDTO(
 				portalReleaseDTO._schemaVersion,
-				ReleaseInfo.getParentBuildNumber(), portalReleaseDTO._state,
-				portalReleaseDTO._testString));
+				ReleaseInfo.getParentBuildNumber(), buildDate,
+				portalReleaseDTO._state, portalReleaseDTO._testString));
 	}
 
 	public static void updateSchemaVersion(
@@ -267,7 +286,8 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 				1, newSchemaVersion.toString()),
 			portalReleaseDTO -> new PortalReleaseDTO(
 				newSchemaVersion, portalReleaseDTO._buildNumber,
-				portalReleaseDTO._state, portalReleaseDTO._testString));
+				portalReleaseDTO._buildDate, portalReleaseDTO._state,
+				portalReleaseDTO._testString));
 	}
 
 	public static void updateState(Connection connection, int state)
@@ -282,7 +302,8 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 			},
 			portalReleaseDTO -> new PortalReleaseDTO(
 				portalReleaseDTO._schemaVersion, portalReleaseDTO._buildNumber,
-				state, portalReleaseDTO._testString));
+				portalReleaseDTO._buildDate, state,
+				portalReleaseDTO._testString));
 	}
 
 	@Override
@@ -349,18 +370,25 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 			() -> {
 				try (PreparedStatement preparedStatement =
 						connection.prepareStatement(
-							"select schemaVersion, buildNumber, state_, " +
-								"testString from Release_ where releaseId = " +
-									ReleaseConstants.DEFAULT_ID)) {
+							StringBundler.concat(
+								"select schemaVersion, buildNumber, ",
+								"buildDate, state_, testString from Release_ ",
+								"where releaseId = ",
+								ReleaseConstants.DEFAULT_ID))) {
 
 					try (ResultSet resultSet =
 							preparedStatement.executeQuery()) {
 
 						while (resultSet.next()) {
+							Date buildDate = resultSet.getDate("buildDate");
+
 							return new PortalReleaseDTO(
 								Version.parseVersion(
 									resultSet.getString("schemaVersion")),
 								resultSet.getInt("buildNumber"),
+								(buildDate != null) ?
+									new java.util.Date(buildDate.getTime()) :
+										null,
 								resultSet.getInt("state_"),
 								resultSet.getString("testString"));
 						}
@@ -430,7 +458,8 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 				_currentPortalReleaseDTODCLSingleton.getSingleton(
 					() -> new PortalReleaseDTO(
 						_initialSchemaVersion, portalReleaseDTO._buildNumber,
-						portalReleaseDTO._state, portalReleaseDTO._testString));
+						portalReleaseDTO._buildDate, portalReleaseDTO._state,
+						portalReleaseDTO._testString));
 			}
 		}
 	}
@@ -463,18 +492,20 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 	private static class PortalReleaseDTO {
 
 		private PortalReleaseDTO(
-			Version schemaVersion, int buildNumber, int state,
-			String testString) {
+			Version schemaVersion, int buildNumber, java.util.Date buildDate,
+			int state, String testString) {
 
 			_schemaVersion = schemaVersion;
 			_buildNumber = buildNumber;
+			_buildDate = buildDate;
 			_state = state;
 			_testString = testString;
 		}
 
 		private static final PortalReleaseDTO _NULL_INSTANCE =
-			new PortalReleaseDTO(null, 0, -1, null);
+			new PortalReleaseDTO(null, 0, null, -1, null);
 
+		private final java.util.Date _buildDate;
 		private final int _buildNumber;
 		private final Version _schemaVersion;
 		private final int _state;

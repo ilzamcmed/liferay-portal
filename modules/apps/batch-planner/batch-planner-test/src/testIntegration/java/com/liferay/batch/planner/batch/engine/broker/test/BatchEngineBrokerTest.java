@@ -145,12 +145,7 @@ import org.junit.runner.RunWith;
 /**
  * @author Matija Petanjek
  */
-@FeatureFlags(
-	{
-		"LPS-135430", "LPS-148856", "LPS-167253", "LPS-172017", "LPS-181663",
-		"LPS-187142"
-	}
-)
+@FeatureFlags({"LPS-135430", "LPS-148856", "LPS-181663", "LPS-187142"})
 @RunWith(Arquillian.class)
 public class BatchEngineBrokerTest {
 
@@ -296,7 +291,7 @@ public class BatchEngineBrokerTest {
 			ObjectValidationRuleConstants.ENGINE_TYPE_DDM,
 			LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
 			LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
-			ObjectValidationRuleConstants.OUTPUT_TYPE_PARTIAL_VALIDATION,
+			ObjectValidationRuleConstants.OUTPUT_TYPE_FULL_VALIDATION,
 			"isEmailAddress(textObjectField)", false, Collections.emptyList());
 
 		_objectViewLocalService.addObjectView(
@@ -983,8 +978,9 @@ public class BatchEngineBrokerTest {
 			if (itemJsonNode.isObject() &&
 				_ignoredImportFields.containsKey(fieldName)) {
 
-				((ObjectNode)itemJsonNode).remove(
-					_ignoredImportFields.get(fieldName));
+				ObjectNode objectNode = (ObjectNode)itemJsonNode;
+
+				objectNode.remove(_ignoredImportFields.get(fieldName));
 			}
 		}
 

@@ -113,6 +113,7 @@ export function ObjectFolderReducer(state: TState, action: TAction): TState {
 						businessType: objectField.businessType,
 						externalReferenceCode:
 							objectField.externalReferenceCode,
+						id: objectField.id,
 						label: objectField.label,
 						name: objectField.name,
 						primaryKey: objectField.name === 'id',
@@ -143,12 +144,7 @@ export function ObjectFolderReducer(state: TState, action: TAction): TState {
 					hasObjectDefinitionUpdateResourcePermission: !!newObjectDefinition
 						.actions.update,
 					hasObjectDefinitionViewResourcePermission: false,
-					hasSelfObjectRelationships: false,
-					label: getLocalizableLabel(
-						newObjectDefinition.defaultLanguageId,
-						newObjectDefinition.label,
-						newObjectDefinition.name
-					),
+					label: newObjectDefinition.label,
 					linkedObjectDefinition: false,
 					objectFields: objectFieldsCustomSort(objectFields),
 					selected: true,
@@ -561,8 +557,6 @@ export function ObjectFolderReducer(state: TState, action: TAction): TState {
 						return {
 							data: {
 								...objectDefinition,
-								hasSelfObjectRelationships:
-									selfObjectRelationships?.length > 0,
 								objectFields: objectFieldsCustomSort(
 									objectDefinition.objectFields
 								),
@@ -685,31 +679,41 @@ export function ObjectFolderReducer(state: TState, action: TAction): TState {
 				selectedObjectFieldName,
 			} = action.payload;
 
-			const selectedObjectDefinitionNode = objectDefinitionNodes.find(
-				(objectDefinitionNode) =>
-					objectDefinitionNode.data?.id === selectedObjectDefinitionId
-			) as Node<ObjectDefinitionNodeData>;
+			let selectedObjectDefinitionNode: Node<
+				ObjectDefinitionNodeData
+			> | null = null;
 
 			const newObjectDefinitionNodes = objectDefinitionNodes.map(
-				(objectDefinitionNode) => ({
-					...objectDefinitionNode,
-					data: {
-						...objectDefinitionNode.data,
-						objectFields: objectDefinitionNode.data?.objectFields.map(
-							(objectField) => ({
-								...objectField,
-								selected:
-									objectDefinitionNode.data?.id ===
-										selectedObjectDefinitionId &&
-									objectField.name ===
-										selectedObjectFieldName,
-							})
-						),
-						selected:
-							objectDefinitionNode.data?.id ===
-							selectedObjectDefinitionId,
-					},
-				})
+				(objectDefinitionNode) => {
+					const newObjectDefinitionNode = {
+						...objectDefinitionNode,
+						data: {
+							...objectDefinitionNode.data,
+							objectFields: objectDefinitionNode.data?.objectFields.map(
+								(objectField) => ({
+									...objectField,
+									selected:
+										objectDefinitionNode.data?.id ===
+											selectedObjectDefinitionId &&
+										objectField.name ===
+											selectedObjectFieldName,
+								})
+							),
+							selected:
+								objectDefinitionNode.data?.id ===
+								selectedObjectDefinitionId,
+						},
+					} as Node<ObjectDefinitionNodeData>;
+
+					if (
+						objectDefinitionNode.data?.id ===
+						selectedObjectDefinitionId
+					) {
+						selectedObjectDefinitionNode = newObjectDefinitionNode;
+					}
+
+					return newObjectDefinitionNode;
+				}
 			) as Node<ObjectDefinitionNodeData>[];
 
 			const newObjectRelationshipEdges = objectRelationshipEdges.map(
@@ -836,13 +840,20 @@ export function ObjectFolderReducer(state: TState, action: TAction): TState {
 				selectedObjectRelationshipId,
 			} = action.payload;
 
+			const selectedObjectRelationshipEdge = objectRelationshipEdges.find(
+				(objectRelationshipEdge) =>
+					objectRelationshipEdge.data?.objectRelationshipId ===
+					selectedObjectRelationshipId
+			);
+
 			const newObjectRelationshipEdges = objectRelationshipEdges.map(
 				(objectRelationshipEdge) => ({
 					...objectRelationshipEdge,
 					data: {
 						...objectRelationshipEdge.data,
 						selected:
-							objectRelationshipEdge.data?.objectRelationshipId.toString() ===
+							objectRelationshipEdge.data
+								?.objectRelationshipId ===
 							selectedObjectRelationshipId,
 					},
 				})
@@ -882,6 +893,7 @@ export function ObjectFolderReducer(state: TState, action: TAction): TState {
 				],
 				rightSidebarType: 'objectRelationshipDetails',
 				selectedObjectField: undefined,
+				selectedObjectRelationship: selectedObjectRelationshipEdge,
 			};
 		}
 

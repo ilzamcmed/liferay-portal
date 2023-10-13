@@ -57,10 +57,6 @@ public class AxisBuild extends BaseBuild {
 	}
 
 	@Override
-	public void findDownstreamBuilds() {
-	}
-
-	@Override
 	public String getArchivePath() {
 		String archiveName = getArchiveName();
 
@@ -184,6 +180,12 @@ public class AxisBuild extends BaseBuild {
 		catch (IOException ioException) {
 			throw new RuntimeException("Unable to generate html", ioException);
 		}
+	}
+
+	@Override
+	public String getBuildName() {
+		return JenkinsResultsParserUtil.combine(
+			getJobVariant(), "/", getAxisVariable());
 	}
 
 	@Override
@@ -492,8 +494,35 @@ public class AxisBuild extends BaseBuild {
 	}
 
 	@Override
+	public boolean isApplySlaveOfflineRules() {
+		return false;
+	}
+
+	@Override
 	public void reinvoke() {
 		throw new RuntimeException("Axis builds cannot be reinvoked");
+	}
+
+	@Override
+	public void setBuildURL(String buildURL) {
+		super.setBuildURL(buildURL);
+
+		MultiPattern buildURLMultiPattern = getBuildURLMultiPattern();
+
+		Matcher matcher = buildURLMultiPattern.find(buildURL);
+
+		if (matcher == null) {
+			axisVariable = null;
+
+			return;
+		}
+
+		try {
+			axisVariable = matcher.group("axisVariable");
+		}
+		catch (IllegalArgumentException illegalArgumentException) {
+			axisVariable = null;
+		}
 	}
 
 	protected AxisBuild(String url) {
@@ -502,22 +531,6 @@ public class AxisBuild extends BaseBuild {
 
 	protected AxisBuild(String url, BatchBuild parentBatchBuild) {
 		super(JenkinsResultsParserUtil.getLocalURL(url), parentBatchBuild);
-	}
-
-	@Override
-	protected void checkForReinvocation(String consoleText) {
-	}
-
-	@Override
-	protected void extractBuildURLComponents(Matcher matcher) {
-		super.extractBuildURLComponents(matcher);
-
-		try {
-			axisVariable = matcher.group("axisVariable");
-		}
-		catch (IllegalArgumentException illegalArgumentException) {
-			axisVariable = null;
-		}
 	}
 
 	@Override

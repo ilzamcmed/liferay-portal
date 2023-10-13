@@ -1237,7 +1237,8 @@ definition {
 		SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
 
 		Type(
-			locator1 = "CommerceEntry#PRICE_FIELD",
+			key_text = "Price List Price",
+			locator1 = "TextInput#ANY",
 			value1 = ${price});
 
 		Button.clickSave();
@@ -1797,6 +1798,12 @@ definition {
 			inputFieldId = "expirationDateTime",
 			locator1 = "TextInput#INPUT_ID",
 			value1 = "${hours}${minutes}${ampm}");
+
+		SelectFrame.selectFrameTop();
+
+		SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
+
+		Button.clickSave();
 	}
 
 	macro setPublishTime {

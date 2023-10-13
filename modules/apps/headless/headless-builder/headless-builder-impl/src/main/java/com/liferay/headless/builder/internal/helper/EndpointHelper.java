@@ -150,10 +150,21 @@ public class EndpointHelper {
 
 		List<Object> values = new ArrayList<>();
 
+		ObjectEntry[] relatedObjectEntries = null;
+
 		Map<String, Object> properties = objectEntry.getProperties();
 
-		ObjectEntry[] relatedObjectEntries = (ObjectEntry[])properties.get(
+		Object relationshipNameValue = properties.get(
 			relationshipsNames.remove(0));
+
+		if (relationshipNameValue instanceof ObjectEntry[]) {
+			relatedObjectEntries = (ObjectEntry[])relationshipNameValue;
+		}
+		else {
+			relatedObjectEntries = new ObjectEntry[] {
+				(ObjectEntry)relationshipNameValue
+			};
+		}
 
 		for (ObjectEntry relatedObjectEntry : relatedObjectEntries) {
 			Object value = _getRelatedObjectValue(

@@ -2122,6 +2122,21 @@ war.path=${app.server.portal.dir}/</echo>
 		</sequential>
 	</macrodef>
 
+	<macrodef name="is-quarterly-release">
+		<sequential>
+			<if>
+				<and>
+					<contains string="${env.JOB_NAME}" substring="release" />
+					<equals arg1="${env.TEST_PORTAL_BRANCH_NAME}" arg2="master" />
+					<matches pattern="\d{4}.q\d+.\d+" string="${env.TEST_PORTAL_RELEASE_VERSION}" />
+				</and>
+				<then>
+					<property name="quarterly.release" value="true" />
+				</then>
+			</if>
+		</sequential>
+	</macrodef>
+
 	<macrodef name="poshi-execute">
 		<attribute default="portal-web/build-test.gradle" name="build.gradle.file" />
 		<attribute default="${basedir}" name="build.gradle.dir" />
@@ -4264,6 +4279,159 @@ tell application "Safari" to quit
 				<then>
 					<echo append="true" file="${test.ext.properties.file}">
 						openid.provider.pingone.test.account.username=${openid.provider.pingone.test.account.username}
+					</echo>
+				</then>
+			</if>
+
+			<if>
+				<isset property="openid.provider.auth0.client.id" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						openid.provider.auth0.client.id=${openid.provider.auth0.client.id}
+					</echo>
+				</then>
+			</if>
+
+			<if>
+				<isset property="openid.provider.auth0.client.password" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						openid.provider.auth0.client.password=${openid.provider.auth0.client.password}
+					</echo>
+				</then>
+			</if>
+
+			<if>
+				<isset property="openid.provider.azure.client.id" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						openid.provider.azure.client.id=${openid.provider.azure.client.id}
+					</echo>
+				</then>
+			</if>
+
+			<if>
+				<isset property="openid.provider.azure.client.password" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						openid.provider.azure.client.password=${openid.provider.azure.client.password}
+					</echo>
+				</then>
+			</if>
+
+			<if>
+				<isset property="openid.provider.default.client.id" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						openid.provider.default.client.id=${openid.provider.default.client.id}
+					</echo>
+				</then>
+			</if>
+
+			<if>
+				<isset property="openid.provider.default.client.password" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						openid.provider.default.client.password=${openid.provider.default.client.password}
+					</echo>
+				</then>
+			</if>
+
+			<if>
+				<isset property="openid.provider.google.client.secret.1" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						openid.provider.google.client.secret.1=${openid.provider.google.client.secret.1}
+					</echo>
+				</then>
+			</if>
+
+			<if>
+				<isset property="openid.provider.google.client.secret.2" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						openid.provider.google.client.secret.2=${openid.provider.google.client.secret.2}
+					</echo>
+				</then>
+			</if>
+
+			<if>
+				<isset property="openid.provider.google.client.secret.3" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						openid.provider.google.client.secret.3=${openid.provider.google.client.secret.3}
+					</echo>
+				</then>
+			</if>
+
+			<if>
+				<isset property="openid.provider.keycloak.client.id.1" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						openid.provider.keycloak.client.id.1=${openid.provider.keycloak.client.id.1}
+					</echo>
+				</then>
+			</if>
+
+			<if>
+				<isset property="openid.provider.keycloak.client.id.2" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						openid.provider.keycloak.client.id.2=${openid.provider.keycloak.client.id.2}
+					</echo>
+				</then>
+			</if>
+
+			<if>
+				<isset property="openid.provider.keycloak.client.password.1" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						openid.provider.keycloak.client.password.1=${openid.provider.keycloak.client.password.1}
+					</echo>
+				</then>
+			</if>
+
+			<if>
+				<isset property="openid.provider.keycloak.client.password.2" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						openid.provider.keycloak.client.password.2=${openid.provider.keycloak.client.password.2}
+					</echo>
+				</then>
+			</if>
+
+			<if>
+				<isset property="openid.provider.okta.client.id" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						openid.provider.okta.client.id=${openid.provider.okta.client.id}
+					</echo>
+				</then>
+			</if>
+
+			<if>
+				<isset property="openid.provider.okta.client.password" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						openid.provider.okta.client.password=${openid.provider.okta.client.password}
+					</echo>
+				</then>
+			</if>
+
+			<if>
+				<isset property="openid.provider.pingone.client.id" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						openid.provider.pingone.client.id=${openid.provider.pingone.client.id}
+					</echo>
+				</then>
+			</if>
+
+			<if>
+				<isset property="openid.provider.pingone.client.password" />
+				<then>
+					<echo append="true" file="${test.ext.properties.file}">
+						openid.provider.pingone.client.password=${openid.provider.pingone.client.password}
 					</echo>
 				</then>
 			</if>
@@ -6668,23 +6836,49 @@ go</echo>
 				</else>
 			</if>
 
-			<var name="app.server.tomcat.dir" value="${app.server.parent.dir}/tomcat-${app.server.tomcat.version}" />
-			<var name="app.server.tomcat.bin.dir" value="${app.server.parent.dir}/tomcat-${app.server.tomcat.version}/bin" />
-			<var name="app.server.tomcat.classes.portal.dir" value="${app.server.parent.dir}/tomcat-${app.server.tomcat.version}/webapps/ROOT/WEB-INF/classes" />
-			<var name="app.server.tomcat.lib.global.dir" value="${app.server.parent.dir}/tomcat-${app.server.tomcat.version}/lib" />
-			<var name="app.server.tomcat.lib.portal.dir" value="${app.server.parent.dir}/tomcat-${app.server.tomcat.version}/webapps/ROOT/WEB-INF/lib" />
-			<var name="app.server.tomcat.shielded-container-lib.portal.dir" value="${app.server.parent.dir}/tomcat-${app.server.tomcat.version}/webapps/ROOT/WEB-INF/shielded-container-lib" />
-			<var name="app.server.tomcat.zip.name" value="apache-tomcat-${app.server.tomcat.version}.zip" />
+			<is-quarterly-release />
 
-			<propertyregex
-				input="${app.server.tomcat.version}"
-				override="true"
-				property="app.server.tomcat.major.version"
-				regexp="(\d+)\..*"
-				replace="\1"
-			/>
+			<if>
+				<isset property="quarterly.release" />
+				<then>
+					<var name="app.server.tomcat.dir" value="${app.server.parent.dir}/tomcat" />
+					<var name="app.server.tomcat.bin.dir" value="${app.server.parent.dir}/tomcat/bin" />
+					<var name="app.server.tomcat.classes.portal.dir" value="${app.server.parent.dir}/tomcat/webapps/ROOT/WEB-INF/classes" />
+					<var name="app.server.tomcat.lib.global.dir" value="${app.server.parent.dir}/tomcat/lib" />
+					<var name="app.server.tomcat.lib.portal.dir" value="${app.server.parent.dir}/tomcat/webapps/ROOT/WEB-INF/lib" />
+					<var name="app.server.tomcat.shielded-container-lib.portal.dir" value="${app.server.parent.dir}/tomcat/webapps/ROOT/WEB-INF/shielded-container-lib" />
+					<var name="app.server.tomcat.zip.name" value="apache-tomcat.zip" />
 
-			<var name="app.server.tomcat.zip.url" value="http://archive.apache.org/dist/tomcat/tomcat-${app.server.tomcat.major.version}/v${app.server.tomcat.version}/bin/${app.server.tomcat.zip.name}" />
+					<propertyregex
+						input="${app.server.tomcat.version}"
+						override="true"
+						property="app.server.tomcat.major.version"
+						regexp="(\d+)\..*"
+						replace="\1"
+					/>
+
+					<var name="app.server.tomcat.zip.url" value="http://archive.apache.org/dist/tomcat/tomcat-${app.server.tomcat.major.version}/v${app.server.tomcat.version}/bin/${app.server.tomcat.zip.name}" />
+				</then>
+				<else>
+					<var name="app.server.tomcat.dir" value="${app.server.parent.dir}/tomcat-${app.server.tomcat.version}" />
+					<var name="app.server.tomcat.bin.dir" value="${app.server.parent.dir}/tomcat-${app.server.tomcat.version}/bin" />
+					<var name="app.server.tomcat.classes.portal.dir" value="${app.server.parent.dir}/tomcat-${app.server.tomcat.version}/webapps/ROOT/WEB-INF/classes" />
+					<var name="app.server.tomcat.lib.global.dir" value="${app.server.parent.dir}/tomcat-${app.server.tomcat.version}/lib" />
+					<var name="app.server.tomcat.lib.portal.dir" value="${app.server.parent.dir}/tomcat-${app.server.tomcat.version}/webapps/ROOT/WEB-INF/lib" />
+					<var name="app.server.tomcat.shielded-container-lib.portal.dir" value="${app.server.parent.dir}/tomcat-${app.server.tomcat.version}/webapps/ROOT/WEB-INF/shielded-container-lib" />
+					<var name="app.server.tomcat.zip.name" value="apache-tomcat-${app.server.tomcat.version}.zip" />
+
+					<propertyregex
+						input="${app.server.tomcat.version}"
+						override="true"
+						property="app.server.tomcat.major.version"
+						regexp="(\d+)\..*"
+						replace="\1"
+					/>
+
+					<var name="app.server.tomcat.zip.url" value="http://archive.apache.org/dist/tomcat/tomcat-${app.server.tomcat.major.version}/v${app.server.tomcat.version}/bin/${app.server.tomcat.zip.name}" />
+				</else>
+			</if>
 
 			<echo append="true" file="app.server.${user.name}.properties">
 				## Autogenerated
@@ -10440,8 +10634,66 @@ org.apache.catalina.tribes.level = FINE]]>
 						type="regexp"
 					/>
 				</unzip>
+
+				<unzip
+					dest="sql/"
+					src="sql/release-sql.zip"
+				>
+					<patternset
+						includes="**"
+					/>
+					<mapper
+						from="(create.*)"
+						to="\1"
+						type="regexp"
+					/>
+				</unzip>
 			</then>
 		</if>
+	</target>
+
+	<target name="execute-command-from-gogo-shell">
+		<set-app-server-properties
+			app.server.bundle.index="${bundle.index}"
+		/>
+
+		<delete file="${test.app.server.liferay.home}/execute-gogo-command.expect" />
+		<delete file="${test.app.server.liferay.home}/gogo-output.txt" />
+
+		<math
+			datatype="int"
+			operand1="${bundle.index}"
+			operand2="11312"
+			operation="+"
+			result="osgi.console.port"
+		/>
+
+		<echo file="${test.app.server.liferay.home}/execute-gogo-command.expect"><![CDATA[#!/usr/bin/expect -f
+log_user 0
+spawn telnet localhost ${osgi.console.port}
+expect "g!"
+
+set command ${command}
+
+send -- "$command\r"
+
+if { $command == "disconnect"} {
+expect "Disconnect from console? (y/n; default=y)"
+
+send -- "y\r"
+}
+
+expect "g!"
+send_user $expect_out(buffer)]]></echo>
+
+		<chmod
+			file="${test.app.server.liferay.home}/execute-gogo-command.expect"
+			perm="a+x"
+		/>
+
+		<exec executable="${test.app.server.liferay.home}/execute-gogo-command.expect" failonerror="true" logError="true" output="${test.app.server.liferay.home}/gogo-output.txt" />
+
+		<print-file file.name="${test.app.server.liferay.home}/gogo-output.txt" />
 	</target>
 
 	<target name="execute-groovy-script-from-gogo-shell">
@@ -11832,6 +12084,8 @@ dl.store.antivirus.enabled=true</echo>
 			</then>
 		</if>
 
+		<get-testcase-property property.name="store.migration.test" />
+
 		<if>
 			<or>
 				<equals arg1="gcs.store.enabled" arg2="" />
@@ -11889,7 +12143,12 @@ pop.server.notifications.enabled=true
 		</if>
 
 		<if>
-			<equals arg1="${gcs.store.enabled}" arg2="true" />
+			<and>
+				<equals arg1="${gcs.store.enabled}" arg2="true" />
+				<not>
+					<equals arg1="${store.migration.test}" arg2="true" />
+				</not>
+			</and>
 			<then>
 				<echo append="true" file="portal-impl/src/portal-ext.properties">
 dl.store.impl=com.liferay.portal.store.gcs.GCSStore</echo>
@@ -12505,7 +12764,6 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 			test.liferay.console.shut.down.file.name=${project.dir}/console-shut-down
 			test.poshi.warnings.file.name=${test.poshi.warnings.file.name}
 			test.retry.command.wait.time=${test.retry.command.wait.time}
-			validation.resource.file.types=${validation.resource.file.types}
 		</echo>
 
 		<if>
@@ -12889,6 +13147,15 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 			<then>
 				<echo append="true" file="${test.ext.properties.file}">
 					test.build.fix.pack.zip.url.previous=${test.build.fix.pack.zip.url.previous}
+				</echo>
+			</then>
+		</if>
+
+		<if>
+			<isset property="validation.resource.file.types" />
+			<then>
+				<echo append="true" file="${test.ext.properties.file}">
+					validation.resource.file.types=${validation.resource.file.types}
 				</echo>
 			</then>
 		</if>
@@ -15790,7 +16057,14 @@ mail.send.blacklist=</echo>
 
 				<ant antfile="build-test-gcs-store.xml" target="create-gcs-bucket" />
 
-				<prepare-gcs-store-configuration />
+				<if>
+					<not>
+						<equals arg1="${store.migration.test}" arg2="true" />
+					</not>
+					<then>
+						<prepare-gcs-store-configuration />
+					</then>
+				</if>
 			</then>
 		</if>
 

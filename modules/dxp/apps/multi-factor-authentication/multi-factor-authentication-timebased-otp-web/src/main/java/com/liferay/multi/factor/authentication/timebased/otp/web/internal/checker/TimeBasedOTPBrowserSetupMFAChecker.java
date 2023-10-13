@@ -278,6 +278,9 @@ public class TimeBasedOTPBrowserSetupMFAChecker
 			_mfaTimeBasedOTPEntryLocalService.updateAttempts(
 				userId, remoteAddress, true);
 
+			_mfaTimeBasedOTPEntryLocalService.updateLastTOTP(
+				userId, mfaTimeBasedOTP);
+
 			_mfaTimeBasedOTPAuditMessageBuilder.routeAuditMessage(
 				_mfaTimeBasedOTPAuditMessageBuilder.
 					buildVerificationSuccessAuditMessage(
@@ -412,15 +415,21 @@ public class TimeBasedOTPBrowserSetupMFAChecker
 		return true;
 	}
 
-	private boolean _verify(String timeBasedOtpValue, long userId) {
+	private boolean _verify(String mfaTimeBasedOTP, long userId) {
 		MFATimeBasedOTPEntry mfaTimeBasedOTPEntry =
 			_mfaTimeBasedOTPEntryLocalService.fetchMFATimeBasedOTPEntryByUserId(
 				userId);
 
-		if (mfaTimeBasedOTPEntry != null) {
+		if (mfaTimeBasedOTPEntry == null) {
+			return false;
+		}
+
+		if (!Objects.equals(
+				mfaTimeBasedOTP, mfaTimeBasedOTPEntry.getLastValidTOTP())) {
+
 			return MFATimeBasedOTPUtil.verifyTimeBasedOTP(
 				_mfaTimeBasedOTPConfiguration.clockSkew(),
-				mfaTimeBasedOTPEntry.getSharedSecret(), timeBasedOtpValue);
+				mfaTimeBasedOTPEntry.getSharedSecret(), mfaTimeBasedOTP);
 		}
 
 		return false;

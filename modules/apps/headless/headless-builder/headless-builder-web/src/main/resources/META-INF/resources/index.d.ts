@@ -10,11 +10,26 @@ interface APIApplicationItem extends BaseItem {
 	version: string;
 }
 
+interface APIEndpointFilter {
+	id: number;
+	oDataFilter: string;
+	r_apiEndpointToAPIFilters_c_apiEndpointId: number;
+}
+
 interface APIEndpointItem extends BaseItem {
+	apiEndpointToAPIFilters: APIEndpointFilter[];
+	apiEndpointToAPISorts: APIEndpointSort[];
 	httpMethod: APIListType;
 	path: string;
 	r_apiApplicationToAPIEndpoints_c_apiApplicationId: string;
+	r_responseAPISchemaToAPIEndpoints_c_apiSchemaId?: number;
 	scope: APIListType;
+}
+
+interface APIEndpointSort {
+	id: number;
+	oDataSort: string;
+	r_apiEndpointToAPISorts_c_apiEndpointId: number;
 }
 
 interface APIListType {
@@ -254,10 +269,16 @@ type APIApplicationUIData = Pick<
 	'baseURL' | 'description' | 'title'
 >;
 
-type APIEndpointUIData = Pick<
-	APIEndpointItem,
-	'description' | 'path' | 'scope'
->;
+type APIEndpointUIData = {
+	apiEndpointToAPIFilters: Partial<APIEndpointFilter>[];
+	apiEndpointToAPISorts: Partial<APIEndpointSort>[];
+	description: string;
+	httpMethod: APIListType;
+	path: string;
+	r_apiApplicationToAPIEndpoints_c_apiApplicationId: string;
+	r_responseAPISchemaToAPIEndpoints_c_apiSchemaId: number;
+	scope: APIListType;
+};
 
 type ActiveNav = 'details' | 'endpoints' | 'schemas';
 

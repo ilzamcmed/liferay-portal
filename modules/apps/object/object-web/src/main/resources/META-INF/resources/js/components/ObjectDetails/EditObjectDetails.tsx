@@ -145,13 +145,10 @@ export default function EditObjectDetails({
 				);
 
 				if (!publishResponse.ok) {
-					const {title} = (await publishResponse.json()) as {
-						status: string;
-						title: string;
-					};
-
 					openToast({
-						message: title,
+						message: Liferay.Language.get(
+							'the-object-definition-is-already-published'
+						),
 						type: 'danger',
 					});
 
@@ -315,9 +312,7 @@ export default function EditObjectDetails({
 						</ClayPanel.Body>
 					</ClayPanel>
 
-					{(Liferay.FeatureFlags['LPS-167253']
-						? values.modifiable
-						: !values.system) && (
+					{values.modifiable && (
 						<ClayPanel
 							collapsable
 							defaultExpanded
@@ -357,21 +352,19 @@ export default function EditObjectDetails({
 						</ClayPanel.Body>
 					</ClayPanel>
 
-					{Liferay.FeatureFlags['LPS-172017'] && (
-						<ClayPanel
-							collapsable
-							defaultExpanded
-							displayTitle={Liferay.Language.get('translations')}
-							displayType="unstyled"
-						>
-							<ClayPanel.Body>
-								<TranslationsContainer
-									setValues={setValues}
-									values={values}
-								/>
-							</ClayPanel.Body>
-						</ClayPanel>
-					)}
+					<ClayPanel
+						collapsable
+						defaultExpanded
+						displayTitle={Liferay.Language.get('translations')}
+						displayType="unstyled"
+					>
+						<ClayPanel.Body>
+							<TranslationsContainer
+								setValues={setValues}
+								values={values}
+							/>
+						</ClayPanel.Body>
+					</ClayPanel>
 				</Sheet>
 			</div>
 		</>

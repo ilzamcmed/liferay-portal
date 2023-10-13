@@ -154,7 +154,7 @@ public class LayoutPageTemplateEntryLocalServiceImpl
 		layoutPageTemplateEntry = layoutPageTemplateEntryPersistence.update(
 			layoutPageTemplateEntry);
 
-		if ((type == LayoutPageTemplateEntryTypeConstants.TYPE_WIDGET_PAGE) &&
+		if ((type == LayoutPageTemplateEntryTypeConstants.WIDGET_PAGE) &&
 			(layoutPrototypeId == 0)) {
 
 			serviceContext.setAttribute(
@@ -252,7 +252,8 @@ public class LayoutPageTemplateEntryLocalServiceImpl
 	@Override
 	public LayoutPageTemplateEntry copyLayoutPageTemplateEntry(
 			long userId, long groupId, long layoutPageTemplateCollectionId,
-			long sourceLayoutPageTemplateEntryId, ServiceContext serviceContext)
+			long sourceLayoutPageTemplateEntryId, boolean copyPermissions,
+			ServiceContext serviceContext)
 		throws Exception {
 
 		LayoutPageTemplateEntry sourceLayoutPageTemplateEntry =
@@ -282,6 +283,20 @@ public class LayoutPageTemplateEntryLocalServiceImpl
 				sourceLayoutPageTemplateEntry.getLayoutPrototypeId(), 0,
 				masterLayoutPlid, WorkflowConstants.STATUS_DRAFT,
 				serviceContext);
+
+		if (copyPermissions) {
+			_resourceLocalService.deleteResource(
+				targetLayoutPageTemplateEntry.getCompanyId(),
+				LayoutPageTemplateEntry.class.getName(),
+				ResourceConstants.SCOPE_INDIVIDUAL,
+				targetLayoutPageTemplateEntry.getLayoutPageTemplateEntryId());
+
+			_resourceLocalService.copyModelResources(
+				sourceLayoutPageTemplateEntry.getCompanyId(),
+				LayoutPageTemplateEntry.class.getName(),
+				sourceLayoutPageTemplateEntry.getLayoutPageTemplateEntryId(),
+				targetLayoutPageTemplateEntry.getLayoutPageTemplateEntryId());
+		}
 
 		FileEntry targetPreviewFileEntry = _copyPreviewFileEntry(
 			sourceLayoutPageTemplateEntry, targetLayoutPageTemplateEntry,
@@ -358,7 +373,7 @@ public class LayoutPageTemplateEntryLocalServiceImpl
 
 		if (Objects.equals(
 				layoutPageTemplateEntry.getType(),
-				LayoutPageTemplateEntryTypeConstants.TYPE_DISPLAY_PAGE) &&
+				LayoutPageTemplateEntryTypeConstants.DISPLAY_PAGE) &&
 			(layoutPageTemplateEntry.getClassTypeId() > 0)) {
 
 			_ddmStructureLinkLocalService.deleteStructureLinks(
@@ -789,8 +804,8 @@ public class LayoutPageTemplateEntryLocalServiceImpl
 		boolean privateLayout = false;
 		String layoutType = LayoutConstants.TYPE_ASSET_DISPLAY;
 
-		if ((type == LayoutPageTemplateEntryTypeConstants.TYPE_BASIC) ||
-			(type == LayoutPageTemplateEntryTypeConstants.TYPE_MASTER_LAYOUT)) {
+		if ((type == LayoutPageTemplateEntryTypeConstants.BASIC) ||
+			(type == LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT)) {
 
 			privateLayout = true;
 			layoutType = LayoutConstants.TYPE_CONTENT;
@@ -807,7 +822,7 @@ public class LayoutPageTemplateEntryLocalServiceImpl
 				LayoutTypeSettingsConstants.KEY_PUBLISHED, "true");
 		}
 
-		if ((type == LayoutPageTemplateEntryTypeConstants.TYPE_MASTER_LAYOUT) ||
+		if ((type == LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT) ||
 			(masterLayoutPlid > 0)) {
 
 			typeSettingsUnicodeProperties.setProperty(
@@ -835,7 +850,7 @@ public class LayoutPageTemplateEntryLocalServiceImpl
 
 		Layout draftLayout = layout.fetchDraftLayout();
 
-		if ((type == LayoutPageTemplateEntryTypeConstants.TYPE_MASTER_LAYOUT) ||
+		if ((type == LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT) ||
 			(masterLayoutPlid > 0)) {
 
 			LayoutSet layoutSet = _layoutSetLocalService.getLayoutSet(
@@ -880,7 +895,7 @@ public class LayoutPageTemplateEntryLocalServiceImpl
 		return addLayoutPageTemplateEntry(
 			layoutPrototype.getUserId(), groupId, 0, 0, 0,
 			nameMap.get(defaultLocale),
-			LayoutPageTemplateEntryTypeConstants.TYPE_WIDGET_PAGE, 0, false,
+			LayoutPageTemplateEntryTypeConstants.WIDGET_PAGE, 0, false,
 			layoutPrototype.getLayoutPrototypeId(), layout.getPlid(), 0, status,
 			new ServiceContext());
 	}
@@ -1051,7 +1066,7 @@ public class LayoutPageTemplateEntryLocalServiceImpl
 		}
 
 		if (Objects.equals(name, "Blank") &&
-			(type == LayoutPageTemplateEntryTypeConstants.TYPE_MASTER_LAYOUT)) {
+			(type == LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT)) {
 
 			throw new LayoutPageTemplateEntryNameException.MustNotBeDuplicate(
 				groupId, name);

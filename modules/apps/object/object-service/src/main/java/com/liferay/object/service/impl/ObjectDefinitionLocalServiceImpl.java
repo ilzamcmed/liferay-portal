@@ -96,7 +96,6 @@ import com.liferay.portal.kernel.dao.orm.Property;
 import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
 import com.liferay.portal.kernel.dependency.manager.DependencyManagerSyncUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -139,7 +138,6 @@ import com.liferay.portal.kernel.workflow.WorkflowInstanceManager;
 import com.liferay.portal.language.override.service.PLOEntryLocalService;
 import com.liferay.portal.search.batch.DynamicQueryBatchIndexingActionableFactory;
 import com.liferay.portal.search.spi.model.query.contributor.ModelPreFilterContributor;
-import com.liferay.portal.search.spi.model.registrar.ModelSearchRegistrarHelper;
 import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.vulcan.util.LocalizedMapUtil;
 
@@ -406,7 +404,7 @@ public class ObjectDefinitionLocalServiceImpl
 			_objectRelationshipLocalService.updateObjectRelationship(
 				objectRelationship.getObjectRelationshipId(),
 				objectRelationship.getParameterObjectFieldId(),
-				objectRelationship.getDeletionType(), true,
+				ObjectRelationshipConstants.DELETION_TYPE_CASCADE, true,
 				objectRelationship.getLabelMap());
 
 			ObjectDefinition objectDefinition1 =
@@ -426,6 +424,9 @@ public class ObjectDefinitionLocalServiceImpl
 			objectDefinitionLocalService.updateRootObjectDefinitionId(
 				objectDefinition2.getObjectDefinitionId(),
 				rootObjectDefinitionId);
+
+			_objectFieldLocalService.updateRequired(
+				objectRelationship.getObjectFieldId2(), true);
 		}
 	}
 
@@ -875,11 +876,10 @@ public class ObjectDefinitionLocalServiceImpl
 				_accountEntryOrganizationRelLocalService,
 				_assetEntryLocalService, _bundleContext,
 				_dynamicQueryBatchIndexingActionableFactory, _groupLocalService,
-				_listTypeLocalService, _modelSearchRegistrarHelper,
-				_objectActionLocalService, objectDefinitionLocalService,
-				_objectEntryLocalService, _objectEntryService,
-				_objectFieldLocalService, _objectLayoutLocalService,
-				_objectLayoutTabLocalService,
+				_listTypeLocalService, _objectActionLocalService,
+				objectDefinitionLocalService, _objectEntryLocalService,
+				_objectEntryService, _objectFieldLocalService,
+				_objectLayoutLocalService, _objectLayoutTabLocalService,
 				_objectRelatedModelsProviderRegistrarHelper,
 				_objectRelationshipLocalService, _objectScopeProviderRegistry,
 				_objectViewLocalService, _organizationLocalService,
@@ -1531,6 +1531,16 @@ public class ObjectDefinitionLocalServiceImpl
 			null);
 	}
 
+	private void _createIndexMetadata(
+			String dbTableName, boolean unique, String... dbColumnNames)
+		throws PortalException {
+
+		ObjectDBManagerUtil.createIndexMetadata(
+			_currentConnection.getConnection(
+				objectDefinitionPersistence.getDataSource()),
+			dbTableName, unique, dbColumnNames);
+	}
+
 	private void _createLocalizationTable(ObjectDefinition objectDefinition) {
 		DynamicObjectDefinitionLocalizationTable
 			dynamicObjectDefinitionLocalizedTable =
@@ -1581,11 +1591,15 @@ public class ObjectDefinitionLocalServiceImpl
 				continue;
 			}
 
-			ObjectDBManagerUtil.createIndexMetadata(
-				objectField.getDBColumnName(),
-				_currentConnection.getConnection(
-					objectDefinitionPersistence.getDataSource()),
-				dbTableName, unique);
+			if (objectField.isLocalized()) {
+				_createIndexMetadata(
+					objectDefinition.getLocalizationDBTableName(), unique,
+					objectField.getDBColumnName(), "languageId");
+			}
+			else {
+				_createIndexMetadata(
+					dbTableName, unique, objectField.getDBColumnName());
+			}
 		}
 	}
 
@@ -1739,15 +1753,11 @@ public class ObjectDefinitionLocalServiceImpl
 	private boolean _isUnmodifiableSystemObject(
 		boolean modifiable, boolean system) {
 
-		if (FeatureFlagManagerUtil.isEnabled("LPS-167253")) {
-			if (!modifiable && system) {
-				return true;
-			}
-
-			return false;
+		if (!modifiable && system) {
+			return true;
 		}
 
-		return system;
+		return false;
 	}
 
 	private ObjectDefinition _publishObjectDefinition(
@@ -2385,9 +2395,6 @@ public class ObjectDefinitionLocalServiceImpl
 
 	@Reference
 	private ListTypeLocalService _listTypeLocalService;
-
-	@Reference
-	private ModelSearchRegistrarHelper _modelSearchRegistrarHelper;
 
 	@Reference
 	private MultiVMPool _multiVMPool;

@@ -3,129 +3,187 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import ClayBadge from '@clayui/badge';
+import './ProductCard.scss';
+
+import ClaySticker from '@clayui/sticker';
 import {useEffect, useState} from 'react';
 
-import {getProductById} from '../../../utils/api';
+import emptyPictureIcon from '../../../assets/icons/avatar.svg';
+import useCart from '../../../hooks/useCart';
+import {getCustomFieldValue} from '../../../utils/customFieldUtil';
+import {
+	getThumbnailByProductAttachment,
+	getValueFromSpecifications,
+} from '../../../utils/util';
+import {LicenseType} from '../enums/licenseType';
+import {SkuOptions} from '../enums/skuOptions';
+import {StepType} from '../enums/stepType';
 
 interface ProductCardProps {
-	productId: number | null;
+	cartUtil: ReturnType<typeof useCart>;
+	product?: Product;
 	selectedAccount?: Account;
-	setProductToForm: (product: Product) => void;
-	showAccount: Boolean;
+	step: StepType;
 }
 
 const ProductCard = ({
-	productId,
+	cartUtil,
+	product,
 	selectedAccount,
-	setProductToForm,
-	showAccount,
+	step,
 }: ProductCardProps) => {
-	const [product, setProduct] = useState<Product[]>([]);
+	const [hasTrial, setHasTrial] = useState(false);
+	const [basePrice, setBasePrice] = useState(0);
+
+	const productHasTrialSKU = (skus: SKU[]) => {
+		skus.forEach(async (sku) => {
+			const licenseUsageType = sku?.skuOptions.find((option) => {
+				return (
+					option?.key === 'trial' &&
+					option?.value === 'yes' &&
+					option?.key
+				);
+			});
+			if (
+				licenseUsageType &&
+				licenseUsageType?.key.toLowerCase() ===
+					SkuOptions.TRIAL.toLowerCase()
+			) {
+				setHasTrial(true);
+			}
+		});
+	};
+
+	const getProductBasePrice = (product: Product) => {
+		product?.skus?.forEach((sku) => {
+			const licenseUsageType = sku?.skuOptions.find(
+				(skuOption) =>
+					skuOption?.key === 'standard' &&
+					skuOption?.value === 'yes' &&
+					skuOption?.key
+			);
+
+			if (
+				licenseUsageType?.key.toLowerCase() ===
+				SkuOptions.STANDARD.toLowerCase()
+			) {
+				setBasePrice(sku.price);
+			}
+		});
+	};
+
+	const totalFormatted = () => {
+		if (step === StepType.LICENSES || step === StepType.PAYMENT) {
+			return (
+				<span className="paid-price-text">
+					{cartUtil?.cart?.id
+						? `${cartUtil?.cart?.summary?.totalFormatted}`
+						: `$0`}
+				</span>
+			);
+		}
+
+		if (basePrice && hasTrial) {
+			return <span>{`30-day trial or $${basePrice}`}</span>;
+		}
+	};
+
+	const getIconUrl = () => {
+		const iconURL = product
+			? getThumbnailByProductAttachment(product.attachments)?.split('/o/')
+			: '';
+
+		return iconURL ? `/o/${iconURL[1]}` : '';
+	};
+
+	const getLicenseTagText = (product: Product) => {
+		const licenseTypeSpecification = getValueFromSpecifications(
+			product.productSpecifications,
+			'license-type'
+		).toLowerCase();
+
+		if (licenseTypeSpecification) {
+			return licenseTypeSpecification === LicenseType.Perpetual
+				? 'One-Time'
+				: 'Annually';
+		}
+	};
 
 	useEffect(() => {
-		const getProdut = async () => {
-			// eslint-disable-next-line promise/catch-or-return
-			{
-				productId &&
-					getProductById({
-						nestedFields: 'skus',
-						productId,
-					}).then((item: Product) => {
-						setProduct([item]);
-					});
-			}
-		};
-		getProdut();
-	}, [productId]);
+		if (product) {
+			productHasTrialSKU(product.skus);
+			getProductBasePrice(product);
+		}
+	}, [product]);
 
-	setProductToForm(product[0]);
-
-	const currentValue = product[0];
-
-	let setHeight;
-
-	if (showAccount) {
-		setHeight = 176;
-	}
-	else {
-		setHeight = 112;
+	if (!product) {
+		return null;
 	}
 
 	return (
-		<div
-			className="d-flex flex-column justify-content-between rounded"
-			style={{backgroundColor: '#F7F7F8', height: setHeight, width: 600}}
-		>
-			{currentValue && (
-				<div className="d-flex flex-row justify-content-between">
-					<div className="align-items-start align-self-start col-8 d-flex justify-content-start">
-						<div className="align-items-center align-self-center d-flex justify-content-center ml-5 mt-4">
-							<img
-								src={currentValue.thumbnail}
-								style={{height: 64, width: 64}}
-							/>
-						</div>
-						<div
-							className="align-self-start d-flex flex-column ml-5 mt-4"
-							style={{height: 64}}
-						>
-							<span className="text-7 ttext-weight-semi-bold">
-								{Object.values(currentValue.name)}
-							</span>
-							<span className="text-2">
-								{' '}
-								{Object.values(currentValue.description)}{' '}
-							</span>
-						</div>
-					</div>
-					<div className="col-4 d-flex flex-column mr-4 mt-3">
-						<span className="align-self-end d-flex text-4">
-							Price
-						</span>
-						<span className="align-self-end d-flex text-5 text-weight-bolder"></span>
-						<div className="align-self-end d-flex text-5 text-center">
-							<ClayBadge displayType="secondary" label="TEST" />
+		<div className="p-5 product-banner">
+			<div className="d-flex flex-row justify-content-between">
+				<div className="d-flex flex-row">
+					<img alt="" height="64px" src={getIconUrl()} width="64px" />
+					<div className="align-items-center ml-4">
+						<h1 className="text-weight-bold">
+							{product.name.en_US}
+						</h1>
+						<div className="sub-text">
+							{getValueFromSpecifications(
+								product.productSpecifications,
+								'latest-version'
+							)}{' '}
+							by{' '}
+							{product.productSpecifications &&
+								getValueFromSpecifications(
+									product.productSpecifications,
+									'developer-name'
+								)}
 						</div>
 					</div>
 				</div>
-			)}
-
-			{showAccount && (
-				<div className="d-flex flex-column">
-					<div className="align-content-center align-items-center align-self-center d-flex">
-						<div
-							className="card-divider"
-							style={{width: 550}}
-						></div>
-					</div>
-
-					<div className="d-flex justify-content-between mt-4">
-						<div className="col-6 d-flex ml-3">
-							<p className="text-3">
-								{selectedAccount && selectedAccount.name}
-							</p>
-						</div>
-
-						<div className="col-6 d-flex flex-row justify-content-between">
-							<div className="col-10 d-flex flex-column mb-2">
-								<span className="align-self-end d-flex mr-2 text-3"></span>
-								<span className="align-self-end d-flex text-2"></span>
-							</div>
-
-							<div className="align-items-center col-2 d-flex justify-content-end">
-								<span className="sticker sticker-sm sticker-user-icon">
-									<span className="sticker-overlay">
-										<img
-											className="sticker-img"
-											src="/images/thumbnail_dock.jpg"
-										/>
-									</span>
-								</span>
-							</div>
-						</div>
+				<div className="align-items-end d-flex flex-column price-text">
+					<strong className="mr-1">Price</strong>
+					<div className="mr-1 py-2">{totalFormatted()}</div>
+					<div className="license-tag px-2">
+						{getLicenseTagText(product)}
 					</div>
 				</div>
+			</div>
+			{selectedAccount && (
+				<>
+					<hr />
+
+					<div className="d-flex flex-row justify-content-between">
+						<strong className="account-banner-title-text align-self-center">
+							Account Selected
+						</strong>
+						<div className="align-items-center d-flex">
+							<div className="account-banner-name-text align-items-end d-flex flex-column m-2">
+								<strong>{selectedAccount?.name}</strong>
+								<div className="account-banner-email-text">
+									{selectedAccount?.customFields &&
+										getCustomFieldValue(
+											selectedAccount.customFields,
+											'Contact Email'
+										)}
+								</div>
+							</div>
+							<ClaySticker shape="circle" size="sm">
+								<ClaySticker.Image
+									alt="placeholder"
+									height="24"
+									src={
+										selectedAccount?.logoURL ??
+										emptyPictureIcon
+									}
+									width="24"
+								/>
+							</ClaySticker>
+						</div>
+					</div>
+				</>
 			)}
 		</div>
 	);

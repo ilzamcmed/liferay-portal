@@ -26,7 +26,6 @@ import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectFieldLocalService;
 import com.liferay.object.service.ObjectRelationshipLocalService;
 import com.liferay.object.system.SystemObjectDefinitionManagerRegistry;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.SetUtil;
@@ -201,8 +200,32 @@ public class ObjectEntryOpenAPIResourceImpl
 				}
 			};
 		}
+		else if (Objects.equals(
+					objectField.getBusinessType(),
+					ObjectFieldConstants.BUSINESS_TYPE_ENCRYPTED) ||
+				 Objects.equals(
+					 objectField.getBusinessType(),
+					 ObjectFieldConstants.BUSINESS_TYPE_LONG_TEXT) ||
+				 Objects.equals(
+					 objectField.getBusinessType(),
+					 ObjectFieldConstants.BUSINESS_TYPE_RICH_TEXT)) {
 
-		if (objectField.getListTypeDefinitionId() != 0) {
+			return new DTOProperty(
+				Collections.singletonMap("x-parent-map", "properties"),
+				objectField.getName(), "String") {
+
+				{
+					setRequired(objectField.isRequired());
+				}
+			};
+		}
+		else if (Objects.equals(
+					objectField.getBusinessType(),
+					ObjectFieldConstants.BUSINESS_TYPE_MULTISELECT_PICKLIST) ||
+				 Objects.equals(
+					 objectField.getBusinessType(),
+					 ObjectFieldConstants.BUSINESS_TYPE_PICKLIST)) {
+
 			DTOProperty dtoProperty = new DTOProperty(
 				Collections.singletonMap("x-parent-map", "properties"),
 				objectField.getName(), ListEntry.class.getSimpleName());
@@ -281,9 +304,7 @@ public class ObjectEntryOpenAPIResourceImpl
 
 			dtoProperties.add(_getDTOProperty(objectField));
 
-			if (objectField.isLocalized() &&
-				FeatureFlagManagerUtil.isEnabled("LPS-172017")) {
-
+			if (objectField.isLocalized()) {
 				dtoProperties.add(
 					new DTOProperty(
 						Collections.singletonMap("x-parent-map", "properties"),
@@ -367,7 +388,9 @@ public class ObjectEntryOpenAPIResourceImpl
 
 	private String _getRef(Schema schema) {
 		if (schema instanceof ArraySchema) {
-			Schema itemsSchema = ((ArraySchema)schema).getItems();
+			ArraySchema arraySchema = (ArraySchema)schema;
+
+			Schema itemsSchema = arraySchema.getItems();
 
 			return itemsSchema.get$ref();
 		}

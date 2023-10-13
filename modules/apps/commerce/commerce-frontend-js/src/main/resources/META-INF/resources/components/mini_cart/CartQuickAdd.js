@@ -11,13 +11,11 @@ import classNames from 'classnames';
 import {fetch} from 'frontend-js-web';
 import React, {useContext, useRef, useState} from 'react';
 
+import {CHANNEL_RESOURCE_ENDPOINT} from '../../utilities/constants';
 import {addToCart} from '../add_to_cart/data';
 import InfiniteScroller from '../infinite_scroller/InfiniteScroller';
 import MiniCartContext from './MiniCartContext';
 import {getCorrectedQuantity} from './util/index';
-
-const CHANNEL_RESOURCE_ENDPOINT =
-	'/o/headless-commerce-delivery-catalog/v1.0/channels';
 
 const getSearchSKUsURL = (page, search, accountId, channelId) => {
 	const url = new URL(
@@ -140,17 +138,33 @@ export default function CartQuickAdd() {
 					price,
 					productConfiguration: replacementConfiguration,
 					sku: replacementSKU,
+					skuUnitOfMeasures: replacementUnitOfMeasures,
 					urls: productURLs,
 				} = replacementSKUData;
+
+				if (
+					replacementUnitOfMeasures &&
+					replacementUnitOfMeasures.length
+				) {
+					replacementSKUData.skuUnitOfMeasure =
+						replacementUnitOfMeasures[0];
+				}
 
 				return {
 					...replacementSKUData,
 					price,
 					productURLs,
 					quantity: getCorrectedQuantity(
-						replacementConfiguration,
+						{
+							...replacementConfiguration,
+							multipleOrderQuantity:
+								replacementSKUData.skuUnitOfMeasure
+									?.incrementalOrderQuantity ||
+								replacementConfiguration.multipleOrderQuantity,
+						},
 						replacementSKU,
-						cartItems
+						cartItems,
+						replacementSKUData.skuUnitOfMeasure?.precision || 0
 					),
 					replacedSkuId: selectedId,
 					settings: replacementConfiguration,
@@ -170,7 +184,7 @@ export default function CartQuickAdd() {
 					},
 					selectedSKU,
 					cartItems,
-					selectedSKUData.skuUnitOfMeasure?.precision || 1
+					selectedSKUData.skuUnitOfMeasure?.precision || 0
 				),
 				settings: selectedConfiguration,
 				skuId: selectedId,

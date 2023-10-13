@@ -14,11 +14,6 @@
 <!--SCHEMA-->
 
 <tr>
-	<td>SCHEMA_TITLE</td>
-	<td>//div[@id='model-${schema}']</td>
-	<td></td>
-</tr>
-<tr>
 	<td>SCHEMA_ENTITY</td>
 	<td>//div[@id='model-${schema}']</td>
 	<td></td>
@@ -69,6 +64,11 @@
 <tr>
 	<td>PARAMETER_UNDER_METHOD</td>
 	<td>//div[contains(@id,'${method}')]//input[contains(@placeholder,'${parameter}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>PARAMETER_TYPE</td>
+	<td>//td[@class='parameters-col_name' and contains(.,'${parameter}') and contains(.,'${type}')]</td>
 	<td></td>
 </tr>
 <tr>

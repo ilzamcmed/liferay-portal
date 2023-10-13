@@ -62,15 +62,25 @@ import org.json.JSONObject;
 public abstract class BaseTopLevelBuild
 	extends BaseParentBuild implements TopLevelBuild {
 
-	@Override
-	public void addDownstreamBuilds(String... urls) {
-		super.addDownstreamBuilds(urls);
+	public static String getReleaseRepositoryName() {
+		String portalBranchName = System.getenv("TEST_PORTAL_BRANCH_NAME");
 
-		if (getDownstreamBuildCount("completed") < getDownstreamBuildCount(
-				null)) {
+		String portalReleaseVersion = System.getenv(
+			"TEST_PORTAL_RELEASE_VERSION");
 
-			setResult(null);
+		if (PortalRelease.isQuarterlyRelease(portalReleaseVersion) ||
+			!portalBranchName.equals("master")) {
+
+			return "liferay-portal-ee";
 		}
+
+		return "liferay-portal";
+	}
+
+	public static boolean isReleaseBuild() {
+		String jobName = System.getenv("JOB_NAME");
+
+		return jobName.equals("test-portal-release");
 	}
 
 	@Override
@@ -207,6 +217,11 @@ public abstract class BaseTopLevelBuild
 		String tempMapName = "git." + gitRepositoryType + ".properties";
 
 		return getTempMap(tempMapName);
+	}
+
+	@Override
+	public String getBuildName() {
+		return "top-level";
 	}
 
 	@Override
@@ -402,14 +417,30 @@ public abstract class BaseTopLevelBuild
 
 	@Override
 	public Element getGitHubMessageElement() {
-		Collections.sort(
-			getDownstreamBuilds(), new BaseBuild.BuildDisplayNameComparator());
+		sortDownstreamBuilds();
 
 		if (getParentBuild() == null) {
 			return getTopGitHubMessageElement();
 		}
 
 		return super.getGitHubMessageElement();
+	}
+
+	@Override
+	public JenkinsCohort getJenkinsCohort() {
+		if (_jenkinsCohort != null) {
+			return _jenkinsCohort;
+		}
+
+		String cohortName = JenkinsResultsParserUtil.getCohortName();
+
+		if (!JenkinsResultsParserUtil.isNullOrEmpty(cohortName)) {
+			_jenkinsCohort = JenkinsCohort.getInstance(cohortName);
+
+			return _jenkinsCohort;
+		}
+
+		return null;
 	}
 
 	@Override
@@ -521,23 +552,6 @@ public abstract class BaseTopLevelBuild
 	}
 
 	@Override
-	public String getResult() {
-		if ((this.result == null) && (getBuildURL() != null)) {
-			JSONObject buildJSONObject = getBuildJSONObject("result");
-
-			String result = buildJSONObject.optString("result");
-
-			if (JenkinsResultsParserUtil.isNullOrEmpty(result)) {
-				result = null;
-			}
-
-			setResult(result);
-		}
-
-		return this.result;
-	}
-
-	@Override
 	public String getStatusSummary() {
 		long currentTimeMillis =
 			JenkinsResultsParserUtil.getCurrentTimeMillis();
@@ -616,6 +630,11 @@ public abstract class BaseTopLevelBuild
 	}
 
 	@Override
+	public boolean isApplyReinvokeRules() {
+		return false;
+	}
+
+	@Override
 	public boolean isCompareToUpstream() {
 		return _compareToUpstream;
 	}
@@ -688,12 +707,11 @@ public abstract class BaseTopLevelBuild
 
 	@Override
 	public synchronized void update() {
-		long start = JenkinsResultsParserUtil.getCurrentTimeMillis();
+		if (skipUpdate()) {
+			return;
+		}
 
 		super.update();
-
-		_updateDuration =
-			JenkinsResultsParserUtil.getCurrentTimeMillis() - start;
 
 		if (_sendBuildMetrics && !fromArchive && (getParentBuild() == null)) {
 			if (!fromCompletedBuild) {
@@ -761,9 +779,18 @@ public abstract class BaseTopLevelBuild
 
 		@Override
 		public RemoteGitRef getSenderRemoteGitRef() {
-			String remoteURL = JenkinsResultsParserUtil.combine(
-				"git@github.com:", getSenderUsername(), "/",
-				getRepositoryName(), ".git");
+			String remoteURL = null;
+
+			if (isReleaseBuild()) {
+				remoteURL = JenkinsResultsParserUtil.combine(
+					"git@github.com:", getSenderUsername(), "/",
+					getReleaseRepositoryName(), ".git");
+			}
+			else {
+				remoteURL = JenkinsResultsParserUtil.combine(
+					"git@github.com:", getSenderUsername(), "/",
+					getRepositoryName(), ".git");
+			}
 
 			return GitUtil.getRemoteGitRef(
 				getSenderBranchName(), new File("."), remoteURL);
@@ -854,17 +881,7 @@ public abstract class BaseTopLevelBuild
 			return;
 		}
 
-		super.findDownstreamBuilds();
-
 		_findDownstreamBuildsInConsoleText();
-
-		String consoleText = getConsoleText();
-
-		for (Build downstreamBuild : getDownstreamBuilds()) {
-			BaseBuild downstreamBaseBuild = (BaseBuild)downstreamBuild;
-
-			downstreamBaseBuild.checkForReinvocation(consoleText);
-		}
 	}
 
 	@Override
@@ -1084,6 +1101,8 @@ public abstract class BaseTopLevelBuild
 			buildFailureElements.add(upstreamJobFailureElement);
 		}
 
+		String jobName = getJobName();
+
 		if (jobName.contains("pullrequest") &&
 			upstreamBuildFailureElements.isEmpty() &&
 			(acceptanceUpstreamJobURL != null)) {
@@ -1153,6 +1172,11 @@ public abstract class BaseTopLevelBuild
 			if (failureMessageElement != null) {
 				messageElement.add(failureMessageElement);
 			}
+		}
+
+		if (Objects.equals(result, "MISSING")) {
+			messageElement.add(
+				Dom4JUtil.toCodeSnippetElement("Build was missing"));
 		}
 
 		return messageElement;
@@ -1307,11 +1331,19 @@ public abstract class BaseTopLevelBuild
 		String senderBranchSHA =
 			workspaceBranchInformation.getSenderBranchSHA();
 
-		GitHubRemoteGitCommit gitHubRemoteGitCommit =
-			GitCommitFactory.newGitHubRemoteGitCommit(
+		GitHubRemoteGitCommit gitHubRemoteGitCommit = null;
+
+		if (isReleaseBuild()) {
+			gitHubRemoteGitCommit = GitCommitFactory.newGitHubRemoteGitCommit(
+				workspaceBranchInformation.getSenderUsername(),
+				getReleaseRepositoryName(), senderBranchSHA);
+		}
+		else {
+			gitHubRemoteGitCommit = GitCommitFactory.newGitHubRemoteGitCommit(
 				workspaceBranchInformation.getSenderUsername(),
 				workspaceBranchInformation.getRepositoryName(),
 				senderBranchSHA);
+		}
 
 		return Dom4JUtil.getNewElement(
 			"div", null,
@@ -1345,6 +1377,8 @@ public abstract class BaseTopLevelBuild
 				"ABORTED", "completed", "---- Aborted: "),
 			getJenkinsReportDownstreamTableElement(
 				"FAILURE", "completed", "---- Failure: "),
+			getJenkinsReportDownstreamTableElement(
+				"MISSING", "completed", "---- Missing: "),
 			getJenkinsReportDownstreamTableElement(
 				"UNSTABLE", "completed", "---- Unstable: "),
 			getJenkinsReportDownstreamTableElement(
@@ -2283,14 +2317,14 @@ public abstract class BaseTopLevelBuild
 
 	private String _getStatusSummary() {
 		return JenkinsResultsParserUtil.combine(
-			String.valueOf(getDownstreamBuildCount("starting")), " Starting  ",
-			"/ ", String.valueOf(getDownstreamBuildCount("missing")),
-			" Missing  ", "/ ",
-			String.valueOf(getDownstreamBuildCount("queued")), " Queued  ",
-			"/ ", String.valueOf(getDownstreamBuildCount("running")),
-			" Running  ", "/ ",
+			String.valueOf(getDownstreamBuildCount("starting")), " Starting / ",
+			String.valueOf(getDownstreamBuildCount("missing")), " Missing / ",
+			String.valueOf(getDownstreamBuildCount("queued")), " Queued / ",
+			String.valueOf(getDownstreamBuildCount("running")), " Running / ",
+			String.valueOf(getDownstreamBuildCount("reporting")),
+			" Reporting / ",
 			String.valueOf(getDownstreamBuildCount("completed")),
-			" Completed  ", "/ ", String.valueOf(getDownstreamBuildCount(null)),
+			" Completed / ", String.valueOf(getDownstreamBuildCount(null)),
 			" Total ");
 	}
 
@@ -2344,10 +2378,10 @@ public abstract class BaseTopLevelBuild
 	private final Map<String, BatchBuild> _downstreamBatchBuilds =
 		new ConcurrentHashMap<>();
 	private boolean _downstreamBatchBuildsPopulated;
+	private JenkinsCohort _jenkinsCohort;
 	private long _lastDownstreamBuildsListingTimestamp = -1L;
 	private String _metricsHostName;
 	private int _metricsHostPort;
 	private final boolean _sendBuildMetrics;
-	private long _updateDuration;
 
 }

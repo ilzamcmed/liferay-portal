@@ -636,7 +636,7 @@ definition {
 				var webContentMultipleSelectionFieldLabel = "Multiple Selection";
 			}
 
-			Check.checkNotVisible(
+			Click.javaScriptClick(
 				key_fieldFieldLabel = ${webContentMultipleSelectionFieldLabel},
 				key_optionValue = ${webContentMultipleSelection},
 				locator1 = "WCEditWebContent#SELECTION_OPTION");
@@ -2050,6 +2050,24 @@ definition {
 				locator1 = "AssetCategorization#VOCABULARY_LIST_ITEM",
 				value1 = ${vocabularyName});
 		}
+	}
+
+	macro viewClipboardContent {
+		WebContentNavigator.openToAddBasicArticle(
+			groupName = "Guest",
+			siteURLKey = "guest");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "CKEditor#BODY_FIELD_IFRAME_2");
+
+		Click(locator1 = "CKEditor#BODY");
+
+		Type.sendKeys(
+			locator1 = "CKEditor#BODY",
+			value1 = "keys=CONTROL,v");
+
+		WaitForElementPresent(
+			key_text = ${text},
+			locator1 = "CKEditor#BODY_TEXT");
 	}
 
 	macro viewCompareVersions {

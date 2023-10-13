@@ -623,7 +623,7 @@ public abstract class BaseSourceCheck implements SourceCheck {
 			return methodCall.substring(0, methodCall.indexOf(CharPool.PERIOD));
 		}
 
-		return null;
+		return StringPool.BLANK;
 	}
 
 	protected String getVariableTypeName(
@@ -657,7 +657,7 @@ public abstract class BaseSourceCheck implements SourceCheck {
 
 		String variable = getVariableName(methodCall);
 
-		if (variable == null) {
+		if (variable.isEmpty()) {
 			return false;
 		}
 
@@ -826,7 +826,7 @@ public abstract class BaseSourceCheck implements SourceCheck {
 		boolean includeArrayOrCollectionTypes) {
 
 		Pattern pattern = Pattern.compile(
-			"\\W(\\w+)\\s+" + variableName + "\\s*[;=),]");
+			"\\W(\\w+)\\s+" + variableName + "\\s*[;=),:]");
 
 		Matcher matcher = pattern.matcher(content);
 
@@ -842,7 +842,7 @@ public abstract class BaseSourceCheck implements SourceCheck {
 			return null;
 		}
 
-		pattern = Pattern.compile("[\\]>]\\s+" + variableName + "\\s*[;=),]");
+		pattern = Pattern.compile("[\\]>]\\s+" + variableName + "\\s*[;=),:]");
 
 		matcher = pattern.matcher(content);
 

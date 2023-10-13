@@ -81,7 +81,11 @@ const ONE_TO_ONE = {
 	value: ObjectRelationshipType.ONE_TO_ONE,
 };
 
-const OBJECT_RELATIONSHIP_TYPES = [MANY_TO_MANY, ONE_TO_MANY, ONE_TO_ONE];
+export const OBJECT_RELATIONSHIP_TYPES = [
+	MANY_TO_MANY,
+	ONE_TO_MANY,
+	ONE_TO_ONE,
+];
 
 export function useObjectRelationshipForm({
 	initialValues,
@@ -305,18 +309,9 @@ export function ObjectRelationshipFormBase({
 			)!;
 
 			const objectDefinitions = items.filter(
-				({modifiable, parameterRequired, storageType, system}) => {
-					if (Liferay.FeatureFlags['LPS-167253']) {
-						return (
-							(objectDefinition.modifiable || modifiable) &&
-							(!Liferay.FeatureFlags['LPS-135430'] ||
-								storageType === 'default') &&
-							!parameterRequired
-						);
-					}
-
+				({modifiable, parameterRequired, storageType}) => {
 					return (
-						(!objectDefinition.system || !system) &&
+						(objectDefinition.modifiable || modifiable) &&
 						(!Liferay.FeatureFlags['LPS-135430'] ||
 							storageType === 'default') &&
 						!parameterRequired

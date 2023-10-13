@@ -28,6 +28,10 @@ import org.json.JSONObject;
 public abstract class SecretsUtil {
 
 	public static String getSecret(String key) {
+		if (_bearerHTTPAuthorization == null) {
+			return key;
+		}
+
 		Matcher matcher = _keyPattern.matcher(key);
 
 		if (matcher.matches()) {
@@ -46,12 +50,14 @@ public abstract class SecretsUtil {
 	public static String getSecret(
 		String vaultName, String itemTitle, String fieldLabel) {
 
+		if (_bearerHTTPAuthorization == null) {
+			return null;
+		}
+
 		Vault vault = Vault.getInstance(vaultName);
 
 		if (vault == null) {
-			System.out.println(
-				"Vault Not Found: " + vaultName + "/" + itemTitle + "/" +
-					fieldLabel);
+			System.out.println("Vault Not Found: " + vaultName);
 
 			return null;
 		}
@@ -60,8 +66,8 @@ public abstract class SecretsUtil {
 
 		if (item == null) {
 			System.out.println(
-				"Item Not Found: " + vaultName + "/" + itemTitle + "/" +
-					fieldLabel);
+				JenkinsResultsParserUtil.combine(
+					"Item Not Found: ", vaultName, "/", itemTitle));
 
 			return null;
 		}
@@ -70,8 +76,9 @@ public abstract class SecretsUtil {
 
 		if (field == null) {
 			System.out.println(
-				"Field Not Found: " + vaultName + "/" + itemTitle + "/" +
-					fieldLabel);
+				JenkinsResultsParserUtil.combine(
+					"Field Not Found: ", vaultName, "/", itemTitle, "/",
+					fieldLabel));
 
 			return null;
 		}

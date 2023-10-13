@@ -12,26 +12,24 @@ interface IProps {
 	disabled: boolean;
 	featureFlagKey: string;
 	inputName: string;
-	labelOff: string;
-	labelOn: string;
+	onItemsChange: (value: Array<any>) => void;
 	toggled: boolean;
 }
 
 const FeatureFlagToggle = ({
 	ariaDescribedBy,
 	companyId,
-	disabled: initialDisabled,
+	disabled,
 	featureFlagKey,
 	inputName,
-	labelOff,
-	labelOn,
+	onItemsChange,
 	toggled: initialToggled,
 }: IProps) => {
-	const [disabled, setDisabled] = useState(initialDisabled);
+	const [isLoading, setIsLoading] = useState(false);
 	const [toggled, setToggled] = useState(initialToggled);
 
 	async function updateToggled(newToggled: boolean) {
-		setDisabled(true);
+		setIsLoading(true);
 
 		try {
 			const response = await Liferay.Util.fetch(
@@ -47,7 +45,13 @@ const FeatureFlagToggle = ({
 			);
 
 			if (response.ok) {
+				const data = await response.json();
+
 				setToggled(newToggled);
+
+				if (data.dependentFeatureFlags.length) {
+					onItemsChange(data.dependentFeatureFlags);
+				}
 			}
 			else {
 				Liferay.Util.openToast({
@@ -59,7 +63,7 @@ const FeatureFlagToggle = ({
 			}
 		}
 		finally {
-			setDisabled(false);
+			setIsLoading(false);
 		}
 	}
 
@@ -67,9 +71,13 @@ const FeatureFlagToggle = ({
 		<>
 			<ClayToggle
 				aria-describedby={ariaDescribedBy}
-				disabled={disabled}
+				disabled={disabled || isLoading}
 				id={inputName}
-				label={toggled ? labelOn : labelOff}
+				label={
+					toggled
+						? Liferay.Language.get('enabled')
+						: Liferay.Language.get('disabled')
+				}
 				onToggle={updateToggled}
 				toggled={toggled}
 				type="checkbox"

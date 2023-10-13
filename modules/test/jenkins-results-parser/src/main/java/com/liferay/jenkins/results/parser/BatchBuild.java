@@ -63,6 +63,11 @@ public class BatchBuild extends BaseParentBuild {
 		return batchName;
 	}
 
+	@Override
+	public String getBuildName() {
+		return getJobVariant();
+	}
+
 	public List<AxisBuild> getDownstreamAxisBuilds() {
 		List<AxisBuild> downstreamAxisBuilds = new ArrayList<>();
 
@@ -84,8 +89,7 @@ public class BatchBuild extends BaseParentBuild {
 
 	@Override
 	public Element getGitHubMessageElement() {
-		Collections.sort(
-			getDownstreamBuilds(), new BaseBuild.BuildDisplayNameComparator());
+		sortDownstreamBuilds();
 
 		Element messageElement = super.getGitHubMessageElement();
 
@@ -281,23 +285,10 @@ public class BatchBuild extends BaseParentBuild {
 	}
 
 	@Override
-	public synchronized void update() {
-		super.update();
-
-		if (badBuildNumbers.size() >= REINVOCATIONS_SIZE_MAX) {
-			return;
+	public boolean isApplyReinvokeRules() {
+		if (getInvocationCount() >= INVOCATION_COUNT_MAX) {
+			return false;
 		}
-
-		String status = getStatus();
-		String result = getResult();
-
-		if ((status.equals("completed") && result.equals("SUCCESS")) ||
-			fromArchive) {
-
-			return;
-		}
-
-		boolean reinvoked = false;
 
 		List<Build> builds = new ArrayList<>();
 
@@ -306,26 +297,24 @@ public class BatchBuild extends BaseParentBuild {
 		builds.addAll(getDownstreamBuilds("completed"));
 
 		for (Build build : builds) {
-			if (reinvoked) {
-				break;
+			if ((isCompleted() && !isFailing()) || !isCompleted() ||
+				isFromArchive()) {
+
+				continue;
 			}
 
-			for (ReinvokeRule reinvokeRule : reinvokeRules) {
-				String buildResult = build.getResult();
-
-				if ((buildResult == null) || buildResult.equals("SUCCESS") ||
-					!reinvokeRule.matches(build)) {
-
+			for (ReinvokeRule reinvokeRule : ReinvokeRule.getReinvokeRules()) {
+				if (!reinvokeRule.matches(build)) {
 					continue;
 				}
 
 				reinvoke(reinvokeRule);
 
-				reinvoked = true;
-
-				break;
+				return true;
 			}
 		}
+
+		return false;
 	}
 
 	protected BatchBuild(String url) {

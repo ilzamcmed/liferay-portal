@@ -31,12 +31,6 @@ export default function App(props) {
 		layoutReportsPanelToggle
 	);
 
-	const handleKeydownPanel = (event) => {
-		if (event.key === 'Escape') {
-			sidenavInstance.toggle();
-		}
-	};
-
 	useEffect(() => {
 		sidenavInstance.on('open.lexicon.sidenav', () => {
 			setSessionValue(
@@ -44,7 +38,6 @@ export default function App(props) {
 				'open'
 			);
 
-			layoutReportsPanelId.focus();
 			setPanelIsOpen(true);
 		});
 
@@ -54,7 +47,6 @@ export default function App(props) {
 				'closed'
 			);
 
-			layoutReportsPanelToggle.focus();
 			setPanelIsOpen(false);
 		});
 
@@ -77,13 +69,6 @@ export default function App(props) {
 	}, [panelIsOpen, layoutReportsPanelToggle]);
 
 	const [eventTriggered, setEventTriggered] = useState(false);
-
-	useEventListener(
-		'keydown',
-		handleKeydownPanel,
-		false,
-		layoutReportsPanelId
-	);
 
 	useEventListener(
 		'mouseenter',

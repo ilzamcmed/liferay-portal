@@ -132,7 +132,6 @@ import com.liferay.portal.kernel.service.UserServiceUtil;
 import com.liferay.portal.kernel.service.VirtualHostLocalServiceUtil;
 import com.liferay.portal.kernel.service.permission.PortletPermissionUtil;
 import com.liferay.portal.kernel.service.permission.UserPermissionUtil;
-import com.liferay.portal.kernel.servlet.BrowserSnifferUtil;
 import com.liferay.portal.kernel.servlet.DynamicServletRequest;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.servlet.HttpSessionWrapper;
@@ -192,6 +191,7 @@ import com.liferay.portal.model.impl.CookieRemotePreference;
 import com.liferay.portal.model.impl.LayoutTypeImpl;
 import com.liferay.portal.security.jaas.JAASHelper;
 import com.liferay.portal.security.sso.SSOUtil;
+import com.liferay.portal.servlet.BrowserSnifferUtil;
 import com.liferay.portal.servlet.I18nServlet;
 import com.liferay.portal.spring.context.PortalContextLoaderListener;
 import com.liferay.portal.struts.StrutsUtil;
@@ -1915,8 +1915,6 @@ public class PortalImpl implements Portal {
 					PortletRequest.RENDER_PHASE)
 			).setMVCRenderCommandName(
 				"/login/create_account"
-			).setRedirect(
-				httpServletRequest.getAttribute(WebKeys.REDIRECT)
 			).setParameter(
 				"saveLastPath", false
 			).setPortletMode(
@@ -7118,6 +7116,16 @@ public class PortalImpl implements Portal {
 		}
 
 		User doAsUser = UserLocalServiceUtil.getUserById(doAsUserId);
+
+		if (!doAsUser.isActive()) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(
+					"Unable to impersonate " + doAsUserIdString +
+						" because the user is not active");
+			}
+
+			return 0;
+		}
 
 		User realUser = UserLocalServiceUtil.getUserById(
 			realUserIdObj.longValue());

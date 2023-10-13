@@ -51,7 +51,6 @@ export function ObjectDefinitionNode({
 		externalReferenceCode,
 		hasObjectDefinitionDeleteResourcePermission,
 		hasObjectDefinitionManagePermissionsResourcePermission,
-		hasSelfObjectRelationships,
 		id,
 		label,
 		linkedObjectDefinition,
@@ -71,6 +70,7 @@ export function ObjectDefinitionNode({
 			editObjectDefinitionURL,
 			elements,
 			objectDefinitionPermissionsURL,
+			selectedObjectDefinitionNode,
 			selectedObjectFolder,
 		},
 		dispatch,
@@ -160,6 +160,8 @@ export function ObjectDefinitionNode({
 	const updateModelBuilderStructure = async (
 		newObjectRelationshipId: number
 	) => {
+		const {edges, nodes} = store.getState();
+
 		const payload = await getUpdatedModelBuilderStructurePayload(
 			selectedObjectFolder.name
 		);
@@ -171,6 +173,15 @@ export function ObjectDefinitionNode({
 				selectedObjectRelationshipEdgeId: newObjectRelationshipId,
 			},
 			type: TYPES.UPDATE_MODEL_BUILDER_STRUCTURE,
+		});
+
+		dispatch({
+			payload: {
+				objectDefinitionNodes: nodes,
+				objectRelationshipEdges: edges,
+				selectedObjectRelationshipId: newObjectRelationshipId,
+			},
+			type: TYPES.SET_SELECTED_OBJECT_RELATIONSHIP_EDGE,
 		});
 	};
 
@@ -274,33 +285,30 @@ export function ObjectDefinitionNode({
 						/>
 					))}
 				</>
-
-				{hasSelfObjectRelationships && (
-					<>
-						<Handle
-							className="lfr-objects__model-builder-node-handle"
-							id="fixedLeftHandle"
-							position={Position.Left}
-							style={{
-								...selfRelationshipHandleStyle,
-								left: '10px',
-								top: '50%',
-							}}
-							type="source"
-						/>
-						<Handle
-							className="lfr-objects__model-builder-node-handle"
-							id="fixedRightHandle"
-							position={Position.Right}
-							style={{
-								...selfRelationshipHandleStyle,
-								right: '4px',
-								top: '50%',
-							}}
-							type="target"
-						/>
-					</>
-				)}
+				<>
+					<Handle
+						className="lfr-objects__model-builder-node-handle"
+						id="fixedLeftHandle"
+						position={Position.Left}
+						style={{
+							...selfRelationshipHandleStyle,
+							left: '10px',
+							top: '50%',
+						}}
+						type="source"
+					/>
+					<Handle
+						className="lfr-objects__model-builder-node-handle"
+						id="fixedRightHandle"
+						position={Position.Right}
+						style={{
+							...selfRelationshipHandleStyle,
+							right: '4px',
+							top: '50%',
+						}}
+						type="target"
+					/>
+				</>
 			</div>
 
 			{showModal.addObjectField && (
@@ -314,27 +322,30 @@ export function ObjectDefinitionNode({
 					onAfterSubmit={(newObjectField) => {
 						const {edges, nodes} = store.getState();
 
-						dispatch({
-							payload: {
-								newObjectField,
-								objectDefinitionExternalReferenceCode: externalReferenceCode,
-								objectDefinitionNodes: nodes,
-								objectRelationshipEdges: edges,
-							},
-							type: TYPES.ADD_OBJECT_FIELD,
-						});
+						if (selectedObjectDefinitionNode) {
+							dispatch({
+								payload: {
+									newObjectField,
+									objectDefinitionExternalReferenceCode: externalReferenceCode,
+									objectDefinitionNodes: nodes,
+									objectRelationshipEdges: edges,
+									selectedObjectDefinitionNode,
+								},
+								type: TYPES.ADD_OBJECT_FIELD,
+							});
 
-						openToast({
-							message: Liferay.Language.get(
-								'field-successfully-added'
-							),
-							type: 'success',
-						});
-						setShowModal((prevState) => ({
-							...prevState,
-							addObjectField: false,
-						}));
-						setShowAllObjectFields(true);
+							openToast({
+								message: Liferay.Language.get(
+									'field-successfully-added'
+								),
+								type: 'success',
+							});
+							setShowModal((prevState) => ({
+								...prevState,
+								addObjectField: false,
+							}));
+							setShowAllObjectFields(true);
+						}
 					}}
 					setVisibility={() =>
 						setShowModal((prevState) => ({

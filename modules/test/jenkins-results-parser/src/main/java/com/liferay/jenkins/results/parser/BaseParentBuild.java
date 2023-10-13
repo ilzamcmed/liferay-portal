@@ -8,6 +8,7 @@ package com.liferay.jenkins.results.parser;
 import java.io.UnsupportedEncodingException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -73,10 +74,7 @@ public abstract class BaseParentBuild extends BaseBuild implements ParentBuild {
 		ParallelExecutor<Build> parallelExecutor = new ParallelExecutor<>(
 			callables, true, getExecutorService());
 
-		List<Build> downstreamBuilds = getDownstreamBuilds();
-
-		downstreamBuilds.addAll(
-			parallelExecutor.execute(1000L * 60L * 60L * 3L));
+		addDownstreamBuilds(parallelExecutor.execute(1000L * 60L * 60L * 3L));
 	}
 
 	@Override
@@ -103,14 +101,14 @@ public abstract class BaseParentBuild extends BaseBuild implements ParentBuild {
 	}
 
 	@Override
-	public synchronized List<Build> getDownstreamBuilds() {
+	public List<Build> getDownstreamBuilds() {
 		if (_downstreamBuilds != null) {
-			return _downstreamBuilds;
+			return new ArrayList<>(_downstreamBuilds);
 		}
 
 		_downstreamBuilds = new ArrayList<>();
 
-		return _downstreamBuilds;
+		return new ArrayList<>(_downstreamBuilds);
 	}
 
 	@Override
@@ -238,9 +236,7 @@ public abstract class BaseParentBuild extends BaseBuild implements ParentBuild {
 	public List<Build> getModifiedDownstreamBuildsByStatus(String status) {
 		List<Build> modifiedDownstreamBuilds = new ArrayList<>();
 
-		List<Build> downstreamBuilds = getDownstreamBuilds();
-
-		for (Build downstreamBuild : downstreamBuilds) {
+		for (Build downstreamBuild : getDownstreamBuilds()) {
 			if (downstreamBuild.isBuildModified()) {
 				modifiedDownstreamBuilds.add(downstreamBuild);
 
@@ -313,7 +309,7 @@ public abstract class BaseParentBuild extends BaseBuild implements ParentBuild {
 		int totalSlavesUsedCount = 1;
 
 		if (ignoreCurrentBuild || (modifiedBuildsOnly && !isBuildModified()) ||
-			((status != null) && !this.status.equals(status))) {
+			((status != null) && !status.equals(getStatus()))) {
 
 			totalSlavesUsedCount = 0;
 		}
@@ -371,9 +367,7 @@ public abstract class BaseParentBuild extends BaseBuild implements ParentBuild {
 			return true;
 		}
 
-		List<Build> downstreamBuilds = getDownstreamBuilds();
-
-		for (Build downstreamBuild : downstreamBuilds) {
+		for (Build downstreamBuild : getDownstreamBuilds()) {
 			if (downstreamBuild.hasBuildURL(buildURL)) {
 				return true;
 			}
@@ -393,18 +387,16 @@ public abstract class BaseParentBuild extends BaseBuild implements ParentBuild {
 
 	@Override
 	public boolean hasModifiedDownstreamBuilds() {
-		List<Build> downstreamBuilds = getDownstreamBuilds();
-
-		for (Build build : downstreamBuilds) {
-			if (build.isBuildModified()) {
+		for (Build downstreamBuild : getDownstreamBuilds()) {
+			if (downstreamBuild.isBuildModified()) {
 				return true;
 			}
 
-			if (!(build instanceof ParentBuild)) {
+			if (!(downstreamBuild instanceof ParentBuild)) {
 				continue;
 			}
 
-			ParentBuild parentBuild = (ParentBuild)build;
+			ParentBuild parentBuild = (ParentBuild)downstreamBuild;
 
 			if (parentBuild.hasModifiedDownstreamBuilds()) {
 				return true;
@@ -416,9 +408,11 @@ public abstract class BaseParentBuild extends BaseBuild implements ParentBuild {
 
 	@Override
 	public void removeDownstreamBuild(Build build) {
-		List<Build> downstreamBuilds = getDownstreamBuilds();
+		if (_downstreamBuilds == null) {
+			getDownstreamBuilds();
+		}
 
-		downstreamBuilds.remove(build);
+		_downstreamBuilds.remove(build);
 	}
 
 	@Override
@@ -438,6 +432,41 @@ public abstract class BaseParentBuild extends BaseBuild implements ParentBuild {
 		return super.replaceBuildURL(text);
 	}
 
+	@Override
+	public void update() {
+		if (skipUpdate()) {
+			return;
+		}
+
+		List<Build> downstreamBuilds = getDownstreamBuilds(null);
+
+		List<Callable<Object>> callables = new ArrayList<>();
+
+		for (final Build downstreamBuild : downstreamBuilds) {
+			Callable<Object> callable = new Callable<Object>() {
+
+				@Override
+				public Object call() {
+					downstreamBuild.update();
+
+					return null;
+				}
+
+			};
+
+			callables.add(callable);
+		}
+
+		ParallelExecutor<Object> parallelExecutor = new ParallelExecutor<>(
+			callables, getExecutorService());
+
+		parallelExecutor.execute();
+
+		findDownstreamBuilds();
+
+		super.update();
+	}
+
 	protected BaseParentBuild(String url) {
 		super(url);
 	}
@@ -446,11 +475,27 @@ public abstract class BaseParentBuild extends BaseBuild implements ParentBuild {
 		super(url, parentBuild);
 	}
 
+	protected void addDownstreamBuilds(Collection<Build> builds) {
+		if (builds == null) {
+			return;
+		}
+
+		builds.removeAll(Collections.singleton(null));
+
+		if (_downstreamBuilds == null) {
+			getDownstreamBuilds();
+		}
+
+		_downstreamBuilds.addAll(builds);
+	}
+
 	protected void addDownstreamBuildsTimelineData(TimelineData timelineData) {
 		for (Build downstreamBuild : getDownstreamBuilds(null)) {
 			downstreamBuild.addTimelineData(timelineData);
 		}
 	}
+
+	protected abstract void findDownstreamBuilds();
 
 	@Override
 	protected List<Callable<Object>> getArchiveCallables() {
@@ -527,6 +572,7 @@ public abstract class BaseParentBuild extends BaseBuild implements ParentBuild {
 		List<Build> failedDownstreamBuilds = new ArrayList<>();
 
 		failedDownstreamBuilds.addAll(getDownstreamBuilds("ABORTED", null));
+		failedDownstreamBuilds.addAll(getDownstreamBuilds("MISSING", null));
 		failedDownstreamBuilds.addAll(getDownstreamBuilds("FAILURE", null));
 		failedDownstreamBuilds.addAll(getDownstreamBuilds("UNSTABLE", null));
 
@@ -573,28 +619,49 @@ public abstract class BaseParentBuild extends BaseBuild implements ParentBuild {
 		return tableRowElements;
 	}
 
+	protected boolean isJenkinsBuildCompleted() {
+		if (!super.isJenkinsBuildCompleted()) {
+			return false;
+		}
+
+		for (Build downstreamBuild : getDownstreamBuilds()) {
+			if (!downstreamBuild.isCompleted()) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	@Override
 	protected void reset() {
 		super.reset();
 
-		List<Build> downstreamBuilds = getDownstreamBuilds();
+		if (_downstreamBuilds == null) {
+			getDownstreamBuilds();
+		}
 
-		downstreamBuilds.clear();
+		_downstreamBuilds.clear();
 	}
 
 	@Override
-	protected void setResult(String result) {
-		this.result = result;
-
-		if ((result == null) ||
-			(getDownstreamBuildCount("completed") < getDownstreamBuildCount(
-				null))) {
-
-			setStatus("running");
+	protected boolean skipUpdate() {
+		if (isBuildModified() || hasModifiedDownstreamBuilds()) {
+			return false;
 		}
-		else {
-			setStatus("completed");
+
+		String status = getStatus();
+
+		if (!status.equals("completed")) {
+			return false;
 		}
+
+		return true;
+	}
+
+	protected void sortDownstreamBuilds() {
+		Collections.sort(
+			_downstreamBuilds, new BaseBuild.BuildDisplayNameComparator());
 	}
 
 	private List<Build> _downstreamBuilds;

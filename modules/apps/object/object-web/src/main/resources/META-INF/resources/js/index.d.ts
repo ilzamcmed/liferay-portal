@@ -199,13 +199,13 @@ interface ObjectDefinitionNodeData
 	hasObjectDefinitionManagePermissionsResourcePermission: boolean;
 	hasObjectDefinitionUpdateResourcePermission: boolean;
 	hasObjectDefinitionViewResourcePermission: boolean;
-	hasSelfObjectRelationships: boolean;
 	linkedObjectDefinition: boolean;
 	objectFields: ObjectFieldNodeRow[];
 	selected: boolean;
 }
 
 interface ObjectEntry {
+	actions: Actions;
 	creator: {
 		additionalName: string;
 		contentType: string;
@@ -373,7 +373,7 @@ interface ObjectFolderItem {
 
 interface ObjectRelationship {
 	deletionType: string;
-	edge: boolean;
+	edge?: boolean;
 	id: number;
 	label: LocalizedValue<string>;
 	name: string;

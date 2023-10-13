@@ -60,12 +60,6 @@ public class ObjectFolderLocalServiceUtil {
 			externalReferenceCode, userId, labelMap, name);
 	}
 
-	public static ObjectFolder addUncategorizedObjectFolder(long companyId)
-		throws PortalException {
-
-		return getService().addUncategorizedObjectFolder(companyId);
-	}
-
 	/**
 	 * Creates a new object folder with the primary key. Does not add the object folder to the database.
 	 *
@@ -339,6 +333,12 @@ public class ObjectFolderLocalServiceUtil {
 	 */
 	public static int getObjectFoldersCount() {
 		return getService().getObjectFoldersCount();
+	}
+
+	public static ObjectFolder getOrAddUncategorizedObjectFolder(long companyId)
+		throws PortalException {
+
+		return getService().getOrAddUncategorizedObjectFolder(companyId);
 	}
 
 	/**
