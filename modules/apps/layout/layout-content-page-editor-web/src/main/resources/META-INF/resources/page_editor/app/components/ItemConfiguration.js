@@ -121,6 +121,27 @@ function ItemConfigurationContent({
 		setActivePanel({id: nextActivePanelId, type: nextActivePanelType});
 	}, [panels, activePanel, setActivePanel, previousPanel]);
 
+	const [isExpandedText, setIsExpandedText] = useState(
+		document.body.classList.contains('c-prefers-expanded-text')
+	);
+
+	useEffect(() => {
+		const expandedText = () => {
+			const hasExpandedTextEnabled = document.body.classList.contains(
+				'c-prefers-expanded-text'
+			);
+			setIsExpandedText(hasExpandedTextEnabled);
+		};
+		const observer = new MutationObserver(expandedText);
+
+		observer.observe(document.body, {
+			attributeFilter: ['class'],
+			attributes: true,
+		});
+
+		return () => observer.disconnect();
+	}, []);
+
 	return (
 		<div className="page-editor__page-structure__item-configuration">
 			{activeItemType === ITEM_TYPES.editable && (
@@ -167,12 +188,10 @@ function ItemConfigurationContent({
 						active={panels.findIndex(
 							(panel) => panel.panelId === activePanel.id
 						)}
-						className={classNames(
-							'flex-nowrap flex-shrink-0 px-3',
-							{
-								'pt-2': activeItemType !== ITEM_TYPES.editable,
-							}
-						)}
+						className={classNames('flex-shrink-0 px-3', {
+							'flex-nowrap': !isExpandedText,
+							'pt-2': activeItemType !== ITEM_TYPES.editable,
+						})}
 						onActiveChange={(activeIndex) => {
 							const panel = panels[activeIndex];
 
@@ -191,7 +210,12 @@ function ItemConfigurationContent({
 								key={panel.panelId}
 							>
 								<span
-									className="c-inner page-editor__page-structure__item-configuration-tab text-truncate"
+									className={classNames(
+										'c-inner page-editor__page-structure__item-configuration-tab',
+										{
+											'text-truncate': !isExpandedText,
+										}
+									)}
 									data-tooltip-align="top"
 									tabIndex="-1"
 									title={panel.label}
