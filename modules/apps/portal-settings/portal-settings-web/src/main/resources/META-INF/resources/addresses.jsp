@@ -116,7 +116,7 @@
 					"namespace", portletDisplay.getNamespace()
 				).build()
 			%>'
-			module="{main} from portal-settings-web"
+			module="{addresses} from portal-settings-web"
 		/>
 	</c:when>
 	<c:otherwise>

@@ -3,5 +3,5 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-export {CountryRegionDynamicSelect, main} from './main';
-export {default as addJsClientExtension} from './admin-client-extension/AddJsClientExtension';
+export {CountryRegionDynamicSelect, AddressesAutoFields} from './addresses';
+export {default as addJsClientExtension} from './admin-client-extension/GlobalJSCETConfiguration';

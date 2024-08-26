@@ -5,7 +5,7 @@
 
 import {CountryRegionDynamicSelect} from '@liferay/address-web';
 
-function main({namespace}) {
+function AddressesAutoFields({namespace}) {
 	AUI().use('liferay-auto-fields', () => {
 		new Liferay.AutoFields({
 			contentBox: `#${namespace}addresses`,
@@ -34,4 +34,4 @@ function main({namespace}) {
 	});
 }
 
-export {CountryRegionDynamicSelect, main};
+export {CountryRegionDynamicSelect, AddressesAutoFields};
