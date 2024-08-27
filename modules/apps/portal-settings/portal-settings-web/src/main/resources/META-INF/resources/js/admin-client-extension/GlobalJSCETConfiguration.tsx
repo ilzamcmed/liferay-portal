@@ -11,7 +11,6 @@ import {AddExtensionButton} from './components/AddExtensionButton';
 import {ExtensionRow} from './components/ExtensionRow';
 import {GlobalCETOrderHelpIcon} from './components/GlobalCETOrderHelpIcon';
 
-
 export type ILoadTypeOptions = 'default' | 'async' | 'defer';
 export type IScriptLocationOptions = string;
 
@@ -206,8 +205,6 @@ const GlobalJSCETConfiguration = ({
 
 	//   TODO: Handle with endpoint to post changes
 
-
-
 	return (
 		<>
 			<div className="global-js-cets-configuration">
@@ -266,7 +263,7 @@ const GlobalJSCETConfiguration = ({
 								<ClayTable.Cell headingCell noWrap>
 									{Liferay.Language.get(
 										'restricted-to-admin-pages'
-									)}	
+									)}
 								</ClayTable.Cell>
 
 								<ClayTable.Cell headingCell>
@@ -296,35 +293,30 @@ const GlobalJSCETConfiguration = ({
 											</ClayTable.Cell>
 										</ClayTable.Row>
 
-										{items.map(
-											({
-												globalJSCET,
-												order,
-											}) => (
-												<ExtensionRow
-													deleteGlobalJSCET={
-														deleteGlobalJSCET
-													}
-													globalJSCET={globalJSCET}
-													handleRestrictedToAdmin={() =>
-														updateGlobalJSCET
-													}
-													key={
-														globalJSCET.cetExternalReferenceCode
-													}
-													order={order}
-													portletNamespace={
-														portletNamespace
-													}
-													restrictedValue={
-														globalJSCET.restrictedToAdmin
-													}
-													updateGlobalJSCET={
-														updateGlobalJSCET
-													}
-												/>
-											)
-										)}
+										{items.map(({globalJSCET, order}) => (
+											<ExtensionRow
+												deleteGlobalJSCET={
+													deleteGlobalJSCET
+												}
+												globalJSCET={globalJSCET}
+												handleRestrictedToAdmin={() =>
+													updateGlobalJSCET
+												}
+												key={
+													globalJSCET.cetExternalReferenceCode
+												}
+												order={order}
+												portletNamespace={
+													portletNamespace
+												}
+												restrictedValue={
+													globalJSCET.restrictedToAdmin
+												}
+												updateGlobalJSCET={
+													updateGlobalJSCET
+												}
+											/>
+										))}
 									</React.Fragment>
 								);
 							})}

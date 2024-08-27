@@ -8,7 +8,10 @@ import {ClayDropDownWithItems} from '@clayui/drop-down';
 import ClayIcon from '@clayui/icon';
 import React, {useState} from 'react';
 
-import {IScriptLocationOptions, SCRIPT_LOCATION_LABELS} from '../GlobalJSCETConfiguration';
+import {
+	IScriptLocationOptions,
+	SCRIPT_LOCATION_LABELS,
+} from '../GlobalJSCETConfiguration';
 
 interface IAddExtensionButton {
 	addGlobalJSCET: (scriptLocation: IScriptLocationOptions) => unknown;

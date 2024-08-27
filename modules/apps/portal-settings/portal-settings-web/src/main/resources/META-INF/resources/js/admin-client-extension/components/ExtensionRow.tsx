@@ -8,7 +8,11 @@ import ClayTable from '@clayui/table';
 import classNames from 'classnames';
 import React, {useMemo} from 'react';
 
-import {DEFAULT_LOAD_TYPE_OPTION, IGlobalJSCET, ILoadTypeOptions} from '../GlobalJSCETConfiguration';
+import {
+	DEFAULT_LOAD_TYPE_OPTION,
+	IGlobalJSCET,
+	ILoadTypeOptions,
+} from '../GlobalJSCETConfiguration';
 import {GlobalCETCheckbox} from './GlobalCETCheckbox';
 import {GlobalCETOptionsDropDown} from './GlobalCETOptionsDropDown';
 
@@ -137,7 +141,9 @@ export function ExtensionRow({
 
 			<ClayTable.Cell className="table-column-text-center">
 				<GlobalCETCheckbox
-					onChange={handleRestrictedToAdmin(globalJSCET.restrictedToAdmin)}
+					onChange={handleRestrictedToAdmin(
+						globalJSCET.restrictedToAdmin
+					)}
 					value={restrictedValue}
 				/>
 			</ClayTable.Cell>
