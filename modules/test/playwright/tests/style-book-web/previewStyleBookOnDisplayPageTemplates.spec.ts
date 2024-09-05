@@ -17,7 +17,6 @@ import getRandomString from '../../utils/getRandomString';
 import {waitForSuccessAlert} from '../../utils/waitForSuccessAlert';
 import {blogsPagesTest} from '../blogs-web/fixtures/blogsPagesTest';
 
-
 const test = mergeTests(
 	blogsPagesTest,
 	loginTest(),
