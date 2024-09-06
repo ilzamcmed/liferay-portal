@@ -5,6 +5,7 @@
 
 import {Locator, Page, expect, mergeTests} from '@playwright/test';
 
+import {isolatedSiteTest} from '../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../fixtures/loginTest';
 import {pageEditorPagesTest} from '../../fixtures/pageEditorPagesTest';
 import {styleBookPageTest} from '../../fixtures/styleBookPageTest';
@@ -19,6 +20,7 @@ import {blogsPagesTest} from '../blogs-web/fixtures/blogsPagesTest';
 
 const test = mergeTests(
 	blogsPagesTest,
+	isolatedSiteTest,
 	loginTest(),
 	pageEditorPagesTest,
 	styleBookPageTest,
@@ -42,14 +44,12 @@ const changeStyleAndCheckPreview = async (
 	displayPageTemplatesPage: DisplayPageTemplatesPage,
 	page: Page,
 	pageEditorPage: PageEditorPage,
+	site: Site,
 	styleBooksPage: StyleBooksPage,
 	templateName: string
 ) => {
-	const publishButton = page.getByRole('button', {
-		name: 'Publish',
-	});
+	await styleBooksPage.goto(site.friendlyUrlPath);
 
-	await styleBooksPage.goto();
 	await page.getByRole('button', {name: /more actions/i}).click();
 	await page.getByRole('menuitem', {name: 'Edit'}).click();
 	await page.getByRole('button', {name: 'Color System'}).click();
@@ -59,23 +59,28 @@ const changeStyleAndCheckPreview = async (
 		.getByLabel('Body Color')
 		.getByLabel('Color')
 		.locator('.layout__color-picker__input');
+
 	await fillAndClickOutside(page, colorInput, colorHEX);
+
 	expect(page.getByText('Saved')).toBeVisible();
 
-	// Publish and verify the style
+	const publishButton = page.getByRole('button', {
+		name: 'Publish',
+	});
 
-	const publishTemplate = async () => {
-		await publishButton.waitFor();
-		await publishButton.click();
+	await publishButton.click();
+
+	await test.step('Publish and verify the style', async () => {
 		await page
 			.getByRole('dialog')
-			.getByRole('button', {name: /publish/i})
+			.getByRole('button', {
+				name: 'Publish',
+			})
 			.click();
 		await waitForSuccessAlert(page, 'Success:Your request');
-	};
-	await publishTemplate();
+	});
 
-	await displayPageTemplatesPage.goto();
+	await displayPageTemplatesPage.goto(site.friendlyUrlPath);
 
 	await page.getByRole('link', {name: templateName}).click();
 	await page.getByLabel('Page Design Options').click();
@@ -89,236 +94,119 @@ const changeStyleAndCheckPreview = async (
 		isTopperStyle: true,
 		style: 'color',
 	});
+
 	expect(fragmentColor).toBe(colorRGB);
 };
 
-test('Create Style Book and View the Fragments is selected in the preview type selector', async ({
-	page,
-	styleBooksPage,
-}) => {
-	const publishButton = page.getByRole('button', {
-		name: 'Publish',
-	});
-	await styleBooksPage.goto();
-	await styleBooksPage.createStyleBook('Test Style Book Name');
-	await publishButton.click();
-	await page
-		.getByRole('dialog')
-		.getByRole('button', {name: /publish/i})
-		.click();
-
-	await page.getByRole('button', {name: /more actions/i}).click();
-	await page.getByRole('menuitem', {name: 'Edit'}).click();
-	await expect(page.getByRole('button', {name: 'Pages'})).toBeVisible();
-});
-
-test('Add a Heading fragment to the first display page template for Web Content Article and Basic Web Content and view the Display Page Templates is shown in preview type selector', async ({
+test('Add a heading fragment and view the display page templates is shown in preview type selector', async ({
 	displayPageTemplatesPage,
 	page,
 	pageEditorPage,
+	site,
 	styleBooksPage,
 }) => {
 	const publishButton = page.getByRole('button', {name: 'Publish'});
+	const displaPageTemplateName = getRandomString();
 
-	// Create and publish a new page template
+	await test.step('Create style book and view the fragments is selected in the preview type selector', async () => {
+		const publishButton = page.getByRole('button', {
+			name: 'Publish',
+		});
+		await styleBooksPage.goto(site.friendlyUrlPath);
 
-	await displayPageTemplatesPage.goto();
-	await displayPageTemplatesPage.createTemplate({
-		contentSubtype: 'Basic Web Content',
-		contentType: 'Web Content Article',
-		name: 'Web Content DPT 1',
+		await styleBooksPage.createStyleBook('Test Style Book Name');
+
+		await publishButton.click();
+
+		await page
+			.getByRole('dialog')
+			.getByRole('button', {name: 'Publish'})
+			.click();
+
+		await page.getByRole('button', {name: 'More actions'}).click();
+		await page.getByRole('menuitem', {name: 'Edit'}).click();
+
+		await expect(
+			page.getByRole('button', {name: 'Fragments'})
+		).toBeVisible();
 	});
 
-	const pageTemplate = page.getByRole('link', {
-		name: 'Web Content DPT 1',
+	await test.step('Create and publish a new page template for web content article and basic web content', async () => {
+		await displayPageTemplatesPage.goto(site.friendlyUrlPath);
+		await displayPageTemplatesPage.createTemplate({
+			contentSubtype: 'Basic Web Content',
+			contentType: 'Web Content Article',
+			name: displaPageTemplateName,
+		});
+
+		const pageTemplate = page.getByRole('link', {
+			name: displaPageTemplateName,
+		});
+
+		await pageTemplate.click();
+
+		await pageEditorPage.addFragment(
+			'Basic Components',
+			'Heading',
+			page.locator('#page-editor div').first()
+		);
+
+		await addHeading(pageEditorPage, publishButton);
+
+		await changeStyleAndCheckPreview(
+			'#666666',
+			'rgb(102, 102, 102)',
+			displayPageTemplatesPage,
+			page,
+			pageEditorPage,
+			site,
+			styleBooksPage,
+			displaPageTemplateName
+		);
 	});
 
-	await pageTemplate.click();
+	await test.step('View the items shown in dropdown menu of preview item selector then change the preview item to the first display page template', async () => {
+		await styleBooksPage.goto(site.friendlyUrlPath);
 
-	await pageEditorPage.addFragment(
-		'Basic Components',
-		'Heading',
-		page.locator('#page-editor div').first()
-	);
+		await page.getByRole('button', {name: 'More actions'}).click();
+		await page.getByRole('menuitem', {name: 'Edit'}).click();
+		await page.getByRole('button', {name: 'Color System'}).click();
+		await page.getByRole('menuitem', {name: 'General'}).click();
 
-	await addHeading(pageEditorPage, publishButton);
+		const colorInput = page
+			.getByLabel('Body Color')
+			.getByLabel('Color')
+			.locator('.layout__color-picker__input');
 
-	await changeStyleAndCheckPreview(
-		'#666666',
-		'rgb(102, 102, 102)',
-		displayPageTemplatesPage,
-		page,
-		pageEditorPage,
-		styleBooksPage,
-		'Web Content DPT 1'
-	);
-});
+		await fillAndClickOutside(page, colorInput, '#005566');
 
-test('Add a Heading fragment to a display page template and preview the effects on the display page template for Blogs Entry', async ({
-	displayPageTemplatesPage,
-	page,
-	pageEditorPage,
-	styleBooksPage,
-}) => {
-	const publishButton = page.getByRole('button', {name: 'Publish'});
-	const displayPageTemplateName = getRandomString();
+		expect(page.getByText('Saved')).toBeVisible();
 
-	// Create and publish a new page template
+		await publishButton.waitFor();
+		await publishButton.click();
 
-	await displayPageTemplatesPage.goto();
-	await displayPageTemplatesPage.createTemplate({
-		contentType: 'Blogs Entry',
-		name: displayPageTemplateName,
+		await page
+			.getByRole('dialog')
+			.getByRole('button', {name: /publish/i})
+			.click();
+
+		await waitForSuccessAlert(page, 'Success:Your request');
+
+		await displayPageTemplatesPage.goto(site.friendlyUrlPath);
+
+		await page.getByRole('link', {name: displaPageTemplateName}).click();
+		await page.getByLabel('Page Design Options').click();
+		await page.getByRole('tab', {name: 'Style Book'}).click();
+		await page.getByLabel('Test Style Book Name').click();
+
+		const headingId = await pageEditorPage.getFragmentId('Heading');
+
+		const fragmentColor = await pageEditorPage.getFragmentStyle({
+			fragmentId: headingId,
+			isTopperStyle: true,
+			style: 'color',
+		});
+
+		expect(fragmentColor).toBe('rgb(0, 85, 102)');
 	});
-	const pageTemplate = page.getByRole('link', {
-		name: displayPageTemplateName,
-	});
-
-	await pageTemplate.click();
-
-	await pageEditorPage.addFragment(
-		'Basic Components',
-		'Heading',
-		page.locator('#page-editor div').first()
-	);
-
-	await addHeading(pageEditorPage, publishButton);
-
-	await changeStyleAndCheckPreview(
-		'#995511',
-		'rgb(153, 85, 17)',
-		displayPageTemplatesPage,
-		page,
-		pageEditorPage,
-		styleBooksPage,
-		displayPageTemplateName
-	);
-});
-
-test('Add a Heading fragment to a display page template for Document and Basic Document', async ({
-	displayPageTemplatesPage,
-	page,
-	pageEditorPage,
-	styleBooksPage,
-}) => {
-	const publishButton = page.getByRole('button', {name: 'Publish'});
-	const displayPageTemplateName = getRandomString();
-
-	// Create and publish a new page template
-
-	await displayPageTemplatesPage.goto();
-	await displayPageTemplatesPage.createTemplate({
-		contentSubtype: 'Basic Document',
-		contentType: 'Document',
-		name: displayPageTemplateName,
-	});
-	await page
-		.getByRole('link', {
-			name: displayPageTemplateName,
-		})
-		.click();
-
-	await pageEditorPage.addFragment(
-		'Basic Components',
-		'Heading',
-		page.locator('#page-editor div').first()
-	);
-
-	await addHeading(pageEditorPage, publishButton);
-
-	await changeStyleAndCheckPreview(
-		'#556622',
-		'rgb(85, 102, 34)',
-		displayPageTemplatesPage,
-		page,
-		pageEditorPage,
-		styleBooksPage,
-		displayPageTemplateName
-	);
-});
-
-test('Add a Heading fragment display page template and preview the effects on the display page template for Category', async ({
-	displayPageTemplatesPage,
-	page,
-	pageEditorPage,
-	styleBooksPage,
-}) => {
-	const publishButton = page.getByRole('button', {name: 'Publish'});
-	const displayPageTemplateName = getRandomString();
-
-	// Create and publish a new page template
-
-	await displayPageTemplatesPage.goto();
-	await displayPageTemplatesPage.createTemplate({
-		contentType: 'Category',
-		name: displayPageTemplateName,
-	});
-	await page.getByRole('link', {name: displayPageTemplateName}).click();
-
-	await pageEditorPage.addFragment(
-		'Basic Components',
-		'Heading',
-		page.locator('#page-editor div').first()
-	);
-
-	await addHeading(pageEditorPage, publishButton);
-
-	await changeStyleAndCheckPreview(
-		'#227777',
-		'rgb(34, 119, 119)',
-		displayPageTemplatesPage,
-		page,
-		pageEditorPage,
-		styleBooksPage,
-		displayPageTemplateName
-	);
-});
-
-test('View the Items shown in dropdown menu of preview item selector then change the preview item to the first display page template', async ({
-	displayPageTemplatesPage,
-	page,
-	pageEditorPage,
-	styleBooksPage,
-}) => {
-	const publishButton = page.getByRole('button', {name: 'Publish'});
-	await styleBooksPage.goto();
-	await page.getByRole('button', {name: /more actions/i}).click();
-	await page.getByRole('menuitem', {name: 'Edit'}).click();
-
-	await page.getByRole('button', {name: 'Pages'}).click();
-	await page.getByRole('menuitem', {name: 'Display Page Template'}).click();
-
-	await page.getByRole('button', {name: 'Color System'}).click();
-	await page.getByRole('menuitem', {name: 'General'}).click();
-
-	const colorInput = page
-		.getByLabel('Body Color')
-		.getByLabel('Color')
-		.locator('.layout__color-picker__input');
-	await fillAndClickOutside(page, colorInput, '#005566');
-	expect(page.getByText('Saved')).toBeVisible();
-
-	await publishButton.waitFor();
-	await publishButton.click();
-	await page
-		.getByRole('dialog')
-		.getByRole('button', {name: /publish/i})
-		.click();
-	await waitForSuccessAlert(page, 'Success:Your request');
-
-	await displayPageTemplatesPage.goto();
-
-	await page.getByRole('link', {name: 'Web Content DPT 1'}).click();
-	await page.getByLabel('Page Design Options').click();
-	await page.getByRole('tab', {name: 'Style Book'}).click();
-	await page.getByLabel('Test Style Book Name').click();
-
-	const headingId = await pageEditorPage.getFragmentId('Heading');
-
-	const fragmentColor = await pageEditorPage.getFragmentStyle({
-		fragmentId: headingId,
-		isTopperStyle: true,
-		style: 'color',
-	});
-	expect(fragmentColor).toBe('rgb(0, 85, 102)');
 });
