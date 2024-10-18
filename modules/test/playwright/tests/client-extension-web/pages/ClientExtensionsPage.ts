@@ -8,25 +8,31 @@ import {Locator, Page, expect} from '@playwright/test';
 import {liferayConfig} from '../../../liferay.config';
 
 export class ClientExtensionsPage {
+	readonly configuredFromTableHeader: Locator;
 	readonly deleteMenuItem: Locator;
 	readonly editMenuItem: Locator;
-	readonly viewMenuItem: Locator;
-
-	readonly configuredFromTableHeader: Locator;
 	readonly nameTableHeader: Locator;
-
 	readonly page: Page;
+	readonly searchButton: Locator;
+	readonly searchInput: Locator;
+	readonly viewMenuItem: Locator;
 
 	constructor(page: Page) {
 
 		// action buttons
 
+		this.configuredFromTableHeader = page.getByLabel('Configured From', {
+			exact: true,
+		});
 		this.deleteMenuItem = page.getByRole('menuitem', {
 			name: 'Delete',
 		});
 		this.editMenuItem = page.getByRole('menuitem', {
 			name: 'Edit',
 		});
+		this.searchButton = page.getByRole('button', {name: 'Search'});
+
+		this.searchInput = page.getByPlaceholder('Search');
 		this.viewMenuItem = page.getByRole('menuitem', {
 			name: 'View',
 		});
@@ -34,10 +40,22 @@ export class ClientExtensionsPage {
 		// table columns
 
 		this.nameTableHeader = page.getByLabel('Name', {exact: true});
-		this.configuredFromTableHeader = page.getByLabel('Configured From', {
-			exact: true,
-		});
 		this.page = page;
+	}
+
+	async assertIsConfiguredFrom(
+		clientExtensionName: string,
+		configuredFrom: string
+	) {
+		await expect(
+			this.getRowByText(clientExtensionName).locator('td').nth(3)
+		).toHaveText(configuredFrom);
+	}
+
+	async assertName(clientExtensionName: string) {
+		await expect(
+			this.getRowByText(clientExtensionName).locator('td').nth(0)
+		).toBeVisible();
 	}
 
 	async deleteClientExtension(clientExtensionName: string) {
@@ -62,36 +80,6 @@ export class ClientExtensionsPage {
 		).toBeVisible();
 	}
 
-	getRowByText(text: string) {
-		return this.page
-			.locator('.dnd-tbody')
-			.locator('.dnd-tr')
-			.filter({
-				has: this.page.getByText(text, {exact: true}).first(),
-			});
-	}
-
-	async viewClientExtension(clientExtensionName: string) {
-		await this.openItemActionsDropdown(clientExtensionName);
-
-		await this.viewMenuItem.click();
-	}
-
-	async assertIsConfiguredFrom(
-		clientExtensionName: string,
-		configuredFrom: string
-	) {
-		await expect(
-			this.getRowByText(clientExtensionName).locator('.dnd-td').nth(3)
-		).toHaveText(configuredFrom);
-	}
-
-	async assertName(clientExtensionName: string) {
-		await expect(
-			this.getRowByText(clientExtensionName).locator('.dnd-td').nth(0)
-		).toBeVisible();
-	}
-
 	async goto() {
 		await this.page.goto(
 			`${liferayConfig.environment.baseUrl}/group/guest/~/control_panel/manage` +
@@ -103,13 +91,34 @@ export class ClientExtensionsPage {
 		expect(this.page.locator('.pagination-results')).toBeVisible();
 	}
 
+	async searchClientExtension(clientExtensionName: string) {
+		await this.searchInput.fill(clientExtensionName);
+
+		await this.searchButton.click();
+	}
+
+	async viewClientExtension(clientExtensionName: string) {
+		await this.openItemActionsDropdown(clientExtensionName);
+
+		await this.viewMenuItem.click();
+	}
+
 	async openItemActionsDropdown(clientExtensionName: string) {
 		await this.page
-			.locator('.dnd-tr')
+			.locator('tr')
 			.filter({has: this.page.getByText(clientExtensionName)})
 			.getByRole('button', {
 				name: 'Actions',
 			})
 			.click();
+	}
+
+	getRowByText(text: string) {
+		return this.page
+			.locator('tbody')
+			.locator('tr')
+			.filter({
+				has: this.page.getByText(text, {exact: true}).first(),
+			});
 	}
 }
