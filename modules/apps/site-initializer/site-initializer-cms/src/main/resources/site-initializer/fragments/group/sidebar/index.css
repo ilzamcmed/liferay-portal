@@ -16,6 +16,7 @@
 		border-right: 1px solid #9b92a5;
 		display: flex;
 		grid-area: sidebar;
+		margin-top: 56px;
 		overflow: hidden;
 		transition: left 400ms ease-in-out;
 	}
@@ -30,6 +31,7 @@
 	.content {
 		background: var(--body-bg);
 		grid-area: content;
+		margin-top:56px;
 	}
 
 	@media (max-width: 575px) {

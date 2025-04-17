@@ -1,7 +1,8 @@
-<nav class="component-tbar tbar">
+<nav class="component-tbar navbar-fixed tbar">
 	<div class="container-fluid container-fluid-max-xxxl">
-		<ul class="tbar-nav">
-			<li class="tbar-item">
+		<ul class="justify-content-between tbar-nav">
+			<div class="align-items-center d-flex">
+				<li class="tbar-item">
 				<button aria-expanded="true" aria-pressed="true" class="btn btn-monospaced btn-outline-borderless btn-secondary btn-sm lfr-portal-tooltip sidebar-toggle" data-titleclose="${languageUtil.get(locale, 'close-sidebar')}" data-titleopen="${languageUtil.get(locale, 'open-sidebar')}" disabled title="${languageUtil.get(locale, 'close-sidebar')}" type="button">
 					<span class="inline-item">
 						[@clay["icon"] symbol="product-menu-open" /]
@@ -12,7 +13,7 @@
 				</button>
 			</li>
 			<li class="tbar-item">
-				<img alt="${configuration.alt}" data-lfr-editable-id="sidebarImage" data-lfr-editable-type="image" height="24" src="/image/company_logo" />
+				<img alt="${languageUtil.get(locale, 'company-logo')}" src="${themeDisplay.getPathImage()}/logo?img_id=${company.getLogoId()}" width="20" />
 			</li>
 			<li class="tbar-item">
 				<div class="tbar-section">
@@ -21,6 +22,19 @@
 					</div>
 				</div>
 			</li>
+			</div>
+
+			<div class="align-items-center d-flex">
+				<li class="tbar-item">
+					[@clay["icon"] symbol="search" /]
+			</li>
+				<li class="tbar-item">
+					[@clay["icon"] symbol="grid" /]
+			</li>
+				<li class="tbar-item">
+					[@liferay.user_personal_bar /]
+			</li>
+			</div>
 		</ul>
 	</div>
 </nav>

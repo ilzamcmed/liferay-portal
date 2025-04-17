@@ -1,0 +1,6 @@
+.navbar-fixed{
+  background-color: #fff;
+  position: fixed;
+  width: -webkit-fill-available;
+  z-index: 1000;
+}

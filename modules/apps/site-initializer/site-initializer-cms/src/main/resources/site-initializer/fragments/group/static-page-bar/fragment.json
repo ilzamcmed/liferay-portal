@@ -3,8 +3,8 @@
 	"configurationPath": "index.json",
 	"cssPath": "index.css",
 	"htmlPath": "index.html",
-	"icon": "product-menu-closed",
+	"icon": "nav",
 	"jsPath": "index.js",
-	"name": "Sidebar Trigger",
+	"name": "Static Page Bar",
 	"type": "component"
 }
